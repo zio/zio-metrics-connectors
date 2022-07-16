@@ -61,8 +61,8 @@ object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
       statsd.statsdLayer,
 
       // The NewRelic reporting layer
-      NewRelicConfig.fromEnvEULayer,
-      newrelic.newRelicLayer,
+      // NewRelicConfig.fromEnvEULayer,
+      // newrelic.newRelicLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig
       // Do NOT forget the .unit for the JVM metrics layer
