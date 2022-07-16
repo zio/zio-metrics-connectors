@@ -23,9 +23,9 @@ See the micro site for more information.
 
 ## ZMX in ZIO 1.x becomes ZIO Metrics Connectors
 
-The API to capture metrics has moved into ZIO core for ZIO 2.x and later. Therefore ZMX 2.x 
+The API to capture metrics has moved into ZIO core for ZIO 2.x and later. Therefore ZIO Metrics Connectors 
 concentrates on providing the backend connectivity to report the captured metrics. The design 
-goal to have the same instrumentation for all backends remains unchanged. 
+goal is to have the same instrumentation of the application for any selected backend. 
 
 # Documentation
 [ZIO Metrics Connectors Microsite](https://zio.github.io/zio-metrics-connectors/)
