@@ -1,4 +1,4 @@
-# ZIO ZMX
+# ZIO Metrics Connectors
 
 | Project Stage | CI | Release | Snapshot | Discord |
 | --- | --- | --- | --- | --- |
