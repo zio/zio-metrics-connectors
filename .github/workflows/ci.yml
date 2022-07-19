@@ -28,7 +28,7 @@ jobs:
       - name: compile all
         run: sbt ++${{ matrix.scala }}! compile
       - name: Run tests
-        run: sbt ++${{ matrix.scala }} test
+        run: sbt ++${{ matrix.scala }}! test
 
   publish:
     runs-on: ubuntu-20.04
