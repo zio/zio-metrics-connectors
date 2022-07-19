@@ -38,41 +38,53 @@ addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 
 lazy val commonSettings = Seq()
 
-lazy val root =
-  (project in file("."))
+lazy val core =
+  crossProject(JSPlatform, JVMPlatform)
+    .in(file("core"))
     .settings(
       run / fork := true,
       Test / run / javaOptions += "-Djava.net.preferIPv4Stack=true",
       cancelable := true,
       stdSettings("zio.metrics.connectors"),
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio"          % Version.zio,
-        "dev.zio" %% "zio-json"     % Version.zioJson,
-        "dev.zio" %% "zio-streams"  % Version.zio,
-        "io.d11"  %% "zhttp"        % Version.zioHttp,
-        "dev.zio" %% "zio-test"     % Version.zio % Test,
-        "dev.zio" %% "zio-test-sbt" % Version.zio % Test,
+        "dev.zio" %%% "zio"          % Version.zio,
+        "dev.zio" %%% "zio-json"     % Version.zioJson,
+        "dev.zio" %%% "zio-streams"  % Version.zio,
+        "dev.zio" %%% "zio-test"     % Version.zio % Test,
+        "dev.zio" %%% "zio-test-sbt" % Version.zio % Test,
       ),
+    )
+    .jvmSettings(
+      libraryDependencies ++= Seq(
+        "io.d11" %% "zhttp" % Version.zioHttp,
+      ),
+    )
+    .jsSettings(
+      scalacOptions ++= {
+        if (scalaVersion.value.equals(Version.ScalaDotty)) {
+          Seq("-scalajs")
+        } else {
+          Seq.empty[String]
+        }
+      },
     )
     .settings(buildInfoSettings("zio.metrics.connectors"))
     .enablePlugins(BuildInfoPlugin)
 
 lazy val docs = project
-  .in(file("zio-zmx-docs"))
+  .in(file("genDocs"))
   .settings(
     commonSettings,
     publish / skip                             := true,
-    moduleName                                 := "zio.zmx-docs",
+    moduleName                                 := "zio-metrics-connectors-docs",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio"   % Version.zio,
       "io.d11"  %% "zhttp" % Version.zioHttp,
     ),
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(root),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core.jvm),
     ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
-    docusaurusCreateSite                       := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
-    docusaurusPublishGhpages                   := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value,
   )
-  .dependsOn(root)
-  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .dependsOn(core.jvm)
+  .enablePlugins(MdocPlugin, ScalaUnidocPlugin)
