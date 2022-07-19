@@ -4,10 +4,10 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 import zio.{Chunk, Duration}
-import zio.metrics._
-import zio.test._
 import zio.json._
+import zio.metrics._
 import zio.metrics.connectors.insight.MetricsMessageImplicits._
+import zio.test._
 
 object MetricsMessageSpec extends ZIOSpecDefault {
 

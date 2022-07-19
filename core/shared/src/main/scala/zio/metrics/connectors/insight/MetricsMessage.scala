@@ -1,10 +1,10 @@
 package zio.metrics.connectors.insight
 
+import java.time.Instant
+
 import zio._
 import zio.json._
 import zio.metrics._
-
-import java.time.Instant
 
 sealed private[insight] trait KeyTypes {
   val name: String
