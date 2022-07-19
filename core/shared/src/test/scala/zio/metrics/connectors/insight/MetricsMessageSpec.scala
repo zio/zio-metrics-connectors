@@ -106,10 +106,10 @@ object MetricsMessageSpec extends ZIOSpecDefault {
   private val genConnect: Gen[Any, ClientMessage] = Gen.const(ClientMessage.Connect)
 
   // A generator for Connected messages
-  private val genConnected: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Connected)
+  private val genConnected: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Connected.apply)
 
   // A generator for Disconnected messages
-  private val genDisconnect: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Disconnect)
+  private val genDisconnect: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Disconnect.apply)
 
   // A generator for Subscription removals
   private val genRemoveSubscription: Gen[Sized, ClientMessage] =
@@ -117,7 +117,7 @@ object MetricsMessageSpec extends ZIOSpecDefault {
 
   // A generator for available keys
   private val genAvailableKeys: Gen[Sized, ClientMessage] =
-    Gen.setOfBounded[Sized, MetricKey[Any]](1, 10)(genKey).map(ClientMessage.AvailableMetrics)
+    Gen.setOfBounded[Sized, MetricKey[Any]](1, 10)(genKey).map(ClientMessage.AvailableMetrics.apply)
 
   // A generator for MetricsUpdates
   private val genNotification: Gen[Sized, ClientMessage] =

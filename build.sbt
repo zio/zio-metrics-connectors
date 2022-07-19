@@ -59,6 +59,9 @@ lazy val core =
         "io.d11" %% "zhttp" % Version.zioHttp,
       ),
     )
+    .jsSettings(
+      scalacOptions += "-scalajs",
+    )
     .settings(buildInfoSettings("zio.metrics.connectors"))
     .enablePlugins(BuildInfoPlugin)
 
