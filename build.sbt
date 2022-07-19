@@ -60,7 +60,13 @@ lazy val core =
       ),
     )
     .jsSettings(
-      scalacOptions += "-scalajs",
+      scalacOptions ++= {
+        if (scalaVersion.value.equals(Version.ScalaDotty)) {
+          Seq("-scalajs")
+        } else {
+          Seq.empty[String]
+        }
+      },
     )
     .settings(buildInfoSettings("zio.metrics.connectors"))
     .enablePlugins(BuildInfoPlugin)
