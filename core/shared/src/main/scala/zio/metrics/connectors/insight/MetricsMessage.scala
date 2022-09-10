@@ -154,6 +154,8 @@ object ClientMessage {
    */
   final case class AvailableMetrics(keys: Set[MetricKey[Any]]) extends ClientMessage
 
+  implicit lazy val encAvailableMetrics: JsonEncoder[AvailableMetrics] = DeriveJsonEncoder.gen[AvailableMetrics]
+
   implicit lazy val encNotification: JsonEncoder[MetricPair.Untyped] =
     JsonEncoder[(MetricKey[Any], MetricState[_])].contramap[MetricPair.Untyped] { pair =>
       (pair.metricKey.asInstanceOf[MetricKey[Any]], pair.metricState)

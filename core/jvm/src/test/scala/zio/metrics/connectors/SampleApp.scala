@@ -2,13 +2,12 @@ package zio.metrics.connectors
 
 import zio._
 import zio.json._
+import zio.metrics.connectors.insight.ClientMessage.encAvailableMetrics
 import zio.metrics.connectors.insight.InsightPublisher
-import zio.metrics.connectors.insight.MetricsMessageImplicits
 import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
-import zio.metrics.connectors.insight.ClientMessage._
 
 import zhttp.html._
 import zhttp.http._
@@ -43,10 +42,9 @@ object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
   private lazy val insightRouter =
     Http.collectZIO[Request] { case Method.GET -> !! / "insight" / "metrics" =>
       ZIO.serviceWithZIO[InsightPublisher](_.getKeys.map(_.toJson).map(Response.json))
-
     }
 
-  private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter)
+  private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightRouter)
 
   private lazy val runHttp = (server.start *> ZIO.never).forkDaemon
 
