@@ -9,17 +9,17 @@ package object insight {
 
   lazy val insightLayer: ZLayer[MetricsConfig & InsightPublisher, Nothing, Unit] =
     ZLayer.fromZIO(
-      ZIO.serviceWithZIO[InsightPublisher](MetricsClient.make(insightHandler(_))).unit,
+      ZIO.service[InsightPublisher].flatMap(clt => MetricsClient.make(insightHandler(clt))).unit,
     )
 
   private def insightHandler(clt: InsightPublisher): Iterable[MetricEvent] => UIO[Unit] = events =>
     for {
-      _ <- ZIO.foreach(events)(evt =>
-             for {
-               reportEvent <- InsightEncoder.encode(evt)
-               _           <- clt.set(reportEvent)
-             } yield (),
-           )
+      reportedMetrics <- ZIO.foreach(events)(evt =>
+                           for {
+                             metric <- InsightEncoder.encode(evt)
+                           } yield metric,
+                         )
+      _               <- clt.set(reportedMetrics)
     } yield ()
 
 }

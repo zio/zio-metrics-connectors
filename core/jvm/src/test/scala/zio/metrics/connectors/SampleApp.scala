@@ -8,6 +8,7 @@ import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
+import zio.metrics.connectors.insight.ClientMessage._
 
 import zhttp.html._
 import zhttp.http._
@@ -41,7 +42,7 @@ object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
 
   private lazy val insightRouter =
     Http.collectZIO[Request] { case Method.GET -> !! / "insight" / "metrics" =>
-      ZIO.serviceWithZIO[InsightPublisher](_.get.map(_.toJson).map(Response.json))
+      ZIO.serviceWithZIO[InsightPublisher](_.getKeys.map(_.toJson).map(Response.json))
 
     }
 
@@ -75,7 +76,7 @@ object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
 
       // The inisght reporting layer
       insight.publisherLayer,
-      // insight.insightLayer,
+      insight.insightLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig
       // Do NOT forget the .unit for the JVM metrics layer
