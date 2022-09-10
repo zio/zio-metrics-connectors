@@ -15,7 +15,7 @@ import zhttp.service.EventLoopGroup
 import zhttp.service.Server
 import zhttp.service.server.ServerChannelFactory
 
-object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
+object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
   private val bindPort = 8080
   private val nThreads = 5

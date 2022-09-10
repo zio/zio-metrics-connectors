@@ -44,6 +44,7 @@ lazy val core =
     .settings(
       run / fork := true,
       Test / run / javaOptions += "-Djava.net.preferIPv4Stack=true",
+      Test / run / mainClass := Some("zio.metrics.connectors.SampleApp"),
       cancelable := true,
       stdSettings("zio.metrics.connectors"),
       libraryDependencies ++= Seq(
