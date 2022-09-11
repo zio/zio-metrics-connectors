@@ -1,6 +1,7 @@
 package zio.metrics.connectors
 
 import zio._
+import zio.metrics.MetricKey
 import zio.metrics.connectors.internal.MetricsClient
 
 package object insight {
@@ -12,14 +13,24 @@ package object insight {
       ZIO.service[InsightPublisher].flatMap(clt => MetricsClient.make(insightHandler(clt))).unit,
     )
 
-  private def insightHandler(clt: InsightPublisher): Iterable[MetricEvent] => UIO[Unit] = events =>
-    for {
-      reportedMetrics <- ZIO.foreach(events)(evt =>
-                           for {
-                             metric <- InsightEncoder.encode(evt)
-                           } yield metric,
-                         )
-      _               <- clt.set(reportedMetrics)
-    } yield ()
+  private def insightHandler(clt: InsightPublisher): Iterable[MetricEvent] => UIO[Unit] = events => {
+
+    val evtFilter: MetricEvent => Boolean = {
+      case MetricEvent.Unchanged(_, _, _) => false
+      case _                              => true
+    }
+
+    val send =
+      ZIO
+        .foreach(events.filter(evtFilter))(evt =>
+          for {
+            encoded <- InsightEncoder.encode(evt)
+            _       <- clt.set(encoded)
+          } yield (),
+        )
+        .unit
+
+    send
+  }
 
 }

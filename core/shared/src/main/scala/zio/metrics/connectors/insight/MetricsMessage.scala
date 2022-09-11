@@ -152,7 +152,7 @@ object ClientMessage {
   /**
    * A message sent by the server to announce the metrics currently available
    */
-  final case class AvailableMetrics(keys: Set[MetricKey[Any]]) extends ClientMessage
+  final case class AvailableMetrics(keys: List[MetricKey[Any]]) extends ClientMessage
 
   implicit lazy val encAvailableMetrics: JsonEncoder[AvailableMetrics] = DeriveJsonEncoder.gen[AvailableMetrics]
 

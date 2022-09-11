@@ -27,6 +27,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       |<title>Simple Server</title>
       |<body>
       |<p><a href="/metrics">Metrics</a></p>
+      |<p><a href="/insight/metrics">Insight Metrics: Get all keys</a></p>
       |</body
       |</html>""".stripMargin
 
@@ -39,12 +40,12 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
         ZIO.serviceWithZIO[PrometheusPublisher](_.get.map(Response.text))
       }
 
-  private lazy val insightRouter =
-    Http.collectZIO[Request] { case Method.GET -> !! / "insight" / "metrics" =>
-      ZIO.serviceWithZIO[InsightPublisher](_.getKeys.map(_.toJson).map(Response.json))
+  private lazy val insightAllKeysRouter =
+    Http.collectZIO[Request] { case Method.GET -> !! / "insight" / "keys" =>
+      ZIO.serviceWithZIO[InsightPublisher](_.getAllKeys.map(_.toJson).map(Response.json))
     }
 
-  private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightRouter)
+  private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightAllKeysRouter)
 
   private lazy val runHttp = (server.start *> ZIO.never).forkDaemon
 
