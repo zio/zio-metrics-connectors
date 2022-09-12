@@ -117,7 +117,7 @@ object MetricsMessageSpec extends ZIOSpecDefault {
 
   // A generator for available keys
   private val genAvailableKeys: Gen[Sized, ClientMessage] =
-    Gen.listOfBounded[Sized, MetricKey[Any]](1, 10)(genKey).map(ClientMessage.AvailableMetrics.apply)
+    Gen.setOfBounded[Sized, MetricKey[Any]](1, 10)(genKey).map(ClientMessage.AvailableMetrics.apply)
 
   // A generator for MetricsUpdates
   private val genNotification: Gen[Sized, ClientMessage] =

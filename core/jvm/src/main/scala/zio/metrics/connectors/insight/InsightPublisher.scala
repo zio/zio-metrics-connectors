@@ -9,7 +9,7 @@ class InsightPublisher private (current: TMap[MetricKey[Any], MetricState[Any]])
   def getAllKeys(implicit trace: Trace): UIO[ClientMessage.AvailableMetrics] =
     for {
       keys <- current.keys.commit
-      res  <- ZIO.succeed(ClientMessage.AvailableMetrics(keys))
+      res  <- ZIO.succeed(ClientMessage.AvailableMetrics(keys.toSet))
     } yield res
 
   def set(next: (MetricKey[Any], MetricState[Any]))(implicit trace: Trace): UIO[Unit] =
