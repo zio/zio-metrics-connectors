@@ -3,25 +3,35 @@ package zio.metrics.connectors.insight
 import zio._
 import zio.metrics.MetricKey
 import zio.metrics.MetricState
-import zio.stm.TMap
 
-// rewrite to ref
-class InsightPublisher private (current: TMap[MetricKey[Any], MetricState[Any]]) {
+class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any]]]) {
+
+  /**
+   * Return all metric keys.
+   */
   def getAllKeys(implicit trace: Trace): UIO[ClientMessage.AvailableMetrics] =
     for {
-      keys <- current.keys.commit
+      keys <- current.get.map(_.keys)
       res  <- ZIO.succeed(ClientMessage.AvailableMetrics(keys.toSet))
     } yield res
 
+  /**
+   * Return metrics for the provided selection of metric keys.
+   */
+  def getMetrics(selection: Iterable[MetricKey[Any]])(implicit trace: Trace): UIO[ClientMessage.MetricsResponse] = ???
+
+  /**
+   * Store metric key and state pairs.
+   */
   def set(next: (MetricKey[Any], MetricState[Any]))(implicit trace: Trace): UIO[Unit] =
     for {
       _ <- ZIO.succeed(println(next))
-      _ <- current.put(next._1, next._2).commit
+      _ <- current.update(_ + next)
     } yield ()
 }
 
 object InsightPublisher {
-  def make = (for {
-    current <- TMap.empty[MetricKey[Any], MetricState[Any]]
-  } yield new InsightPublisher(current)).commit
+  def make = for {
+    current <- Ref.make(Map.empty[MetricKey[Any], MetricState[Any]])
+  } yield new InsightPublisher(current)
 }

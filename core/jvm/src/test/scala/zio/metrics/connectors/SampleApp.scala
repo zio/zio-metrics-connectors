@@ -14,6 +14,7 @@ import zhttp.http._
 import zhttp.service.EventLoopGroup
 import zhttp.service.Server
 import zhttp.service.server.ServerChannelFactory
+import zio.metrics.connectors.insight.ClientMessage
 
 object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
@@ -46,8 +47,28 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
     }
 
   // POST: /insight/metrics body Seq[MetricKey] => Seq[MetricsNotification]
+  private lazy val insightGetMetricsRouter =
+    Http.collectZIO[Request] {case req @ Method.POST -> !! / "insight" / "metrics" =>
+      for {
+        request  <- req.body.asString.map(_.fromJson[ClientMessage.AvailableMetrics]).orDie
+        response <- request match {
+                        case Left(e)  =>
+                          ZIO
+                            .debug(s"Failed to parse the input: $e")
+                            .as(
+                              Response.text(e).setStatus(Status.BadRequest),
+                            )
+                        case Right(r) =>
+                          ZIO.serviceWithZIO[InsightPublisher](_.getMetrics(r.keys))
+                          .map(_.toJson)
+                          .map(Response.json)
+                      }
+      } yield response
+      
+      
+  }
 
-  private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightAllKeysRouter)
+  private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightAllKeysRouter ++ insightGetMetricsRouter)
 
   private lazy val runHttp = (server.start *> ZIO.never).forkDaemon
 
