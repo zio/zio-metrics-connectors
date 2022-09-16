@@ -45,6 +45,8 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       ZIO.serviceWithZIO[InsightPublisher](_.getAllKeys.map(_.toJson).map(Response.json))
     }
 
+  // POST: /insight/metrics body Seq[MetricKey] => Seq[MetricsNotification]
+
   private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightAllKeysRouter)
 
   private lazy val runHttp = (server.start *> ZIO.never).forkDaemon

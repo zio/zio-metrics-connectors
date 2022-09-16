@@ -1,7 +1,6 @@
 package zio.metrics.connectors
 
 import zio._
-import zio.metrics.MetricKey
 import zio.metrics.connectors.internal.MetricsClient
 
 package object insight {
@@ -20,7 +19,7 @@ package object insight {
       case _                              => true
     }
 
-    val send =
+    val update =
       ZIO
         .foreach(events.filter(evtFilter))(evt =>
           for {
@@ -30,7 +29,7 @@ package object insight {
         )
         .unit
 
-    send
+    update
   }
 
 }

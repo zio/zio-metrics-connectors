@@ -5,6 +5,7 @@ import zio.metrics.MetricKey
 import zio.metrics.MetricState
 import zio.stm.TMap
 
+// rewrite to ref
 class InsightPublisher private (current: TMap[MetricKey[Any], MetricState[Any]]) {
   def getAllKeys(implicit trace: Trace): UIO[ClientMessage.AvailableMetrics] =
     for {
