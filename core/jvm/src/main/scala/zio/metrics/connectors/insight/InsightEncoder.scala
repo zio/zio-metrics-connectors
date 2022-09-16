@@ -2,7 +2,6 @@ package zio.metrics.connectors.insight
 
 import java.time.Instant
 
-import zio.Chunk
 import zio.ZIO
 import zio.metrics.MetricKey
 import zio.metrics.MetricState
