@@ -1,7 +1,10 @@
 package zio.metrics.connectors.insight
 
+import java.time.Instant
+
 import zio._
 import zio.metrics.MetricKey
+import zio.metrics.MetricPair
 import zio.metrics.MetricState
 
 class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any]]]) {
@@ -19,6 +22,11 @@ class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any
    * Return metrics for the provided selection of metric keys.
    */
   def getMetrics(selection: Iterable[MetricKey[Any]])(implicit trace: Trace): UIO[ClientMessage.MetricsResponse] = ???
+    // for {
+    //   selection <- current.get.map(_.filter { case (key: MetricKey[Any], _) => selection.exists(key == _) })
+    //   result    <- ClientMessage.MetricsResponse(Instant.now, selection)
+
+    // } yield ???
 
   /**
    * Store metric key and state pairs.
