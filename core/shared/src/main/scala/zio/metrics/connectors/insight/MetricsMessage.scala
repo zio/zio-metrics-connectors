@@ -161,8 +161,8 @@ object ClientMessage {
   implicit lazy val decMetricsResponse: JsonDecoder[MetricsResponse] = DeriveJsonDecoder.gen[MetricsResponse]
 
   /**
-   * A message sent by the server to announce the metrics currently available. Also used to request the a
-   * selection of metrics that the client is interested in.
+   * A message sent by the server to announce the metrics currently available. Also used to request
+   * a selection of metrics that the client is interested in.
    */
   final case class AvailableMetrics(keys: Set[MetricKey[Any]]) extends ClientMessage
 

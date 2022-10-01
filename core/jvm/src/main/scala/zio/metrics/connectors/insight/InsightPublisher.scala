@@ -4,6 +4,7 @@ import java.time.Instant
 
 import zio._
 import zio.metrics.MetricKey
+import zio.metrics.MetricKeyType
 import zio.metrics.MetricPair
 import zio.metrics.MetricState
 
@@ -21,12 +22,18 @@ class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any
   /**
    * Return metrics for the provided selection of metric keys.
    */
-  def getMetrics(selection: Iterable[MetricKey[Any]])(implicit trace: Trace): UIO[ClientMessage.MetricsResponse] = ???
-    // for {
-    //   selection <- current.get.map(_.filter { case (key: MetricKey[Any], _) => selection.exists(key == _) })
-    //   result    <- ClientMessage.MetricsResponse(Instant.now, selection)
-
-    // } yield ???
+  def getMetrics(selection: Iterable[MetricKey[Any]])(implicit trace: Trace): UIO[ClientMessage.MetricsResponse] =
+    for {
+      filtered <- current.get.map(_.filter { case (key: MetricKey[Any], _) =>
+                    selection.exists(key == _)
+                  })
+      result    = ClientMessage.MetricsResponse(
+                    Instant.now,
+                    filtered
+                      .map(kv => MetricPair(kv._1, kv._2).asInstanceOf[MetricPair[MetricKeyType { type Out = Any }, Any]])
+                      .toSet,
+                  )
+    } yield result
 
   /**
    * Store metric key and state pairs.
@@ -39,7 +46,7 @@ class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any
 }
 
 object InsightPublisher {
-  def make = for {
+  def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[MetricKey[Any], MetricState[Any]])
   } yield new InsightPublisher(current)
 }
