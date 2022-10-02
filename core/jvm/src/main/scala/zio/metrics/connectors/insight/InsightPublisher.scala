@@ -3,10 +3,7 @@ package zio.metrics.connectors.insight
 import java.time.Instant
 
 import zio._
-import zio.metrics.MetricKey
-import zio.metrics.MetricKeyType
-import zio.metrics.MetricPair
-import zio.metrics.MetricState
+import zio.metrics.{MetricKey, MetricKeyType, MetricPair, MetricState}
 
 class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any]]]) {
 
@@ -30,7 +27,9 @@ class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any
       result    = ClientMessage.MetricsResponse(
                     Instant.now,
                     filtered
-                      .map(kv => MetricPair(kv._1, kv._2).asInstanceOf[MetricPair[MetricKeyType { type Out = Any }, Any]])
+                      .map(kv =>
+                        MetricPair(kv._1, kv._2).asInstanceOf[MetricPair[MetricKeyType { type Out = Any }, Any]],
+                      ) // TODO: not clear why asInstanceOf is needed?
                       .toSet,
                   )
     } yield result
