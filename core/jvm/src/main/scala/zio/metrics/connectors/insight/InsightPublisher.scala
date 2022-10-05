@@ -38,10 +38,7 @@ class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any
    * Store metric key and state pairs.
    */
   def set(next: (MetricKey[Any], MetricState[Any]))(implicit trace: Trace): UIO[Unit] =
-    for {
-      _ <- ZIO.succeed(println(next))
-      _ <- current.update(_ + next)
-    } yield ()
+    current.update(_ + next)
 }
 
 object InsightPublisher {
