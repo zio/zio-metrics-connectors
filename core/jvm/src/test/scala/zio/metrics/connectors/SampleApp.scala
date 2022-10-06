@@ -9,9 +9,11 @@ import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
+import zio.stm.TRef
 
 import zhttp.html._
 import zhttp.http._
+import zhttp.http.middleware.HttpMiddleware
 import zhttp.service.EventLoopGroup
 import zhttp.service.Server
 import zhttp.service.server.ServerChannelFactory
@@ -48,6 +50,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
   // POST: /insight/metrics body Seq[MetricKey] => Seq[MetricsNotification]
   // TODO: Should we add an additional module with a layer implementation for zio-http?
+  // should be added (at some point) to zio-http ...
   private lazy val insightGetMetricsRouter =
     Http.collectZIO[Request] { case req @ Method.POST -> !! / "insight" / "metrics" =>
       for {
@@ -99,7 +102,6 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       // newrelic.newRelicLayer,
 
       // The inisght reporting layer
-      insight.publisherLayer,
       insight.insightLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig
@@ -107,5 +109,4 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       Runtime.enableRuntimeMetrics,
       DefaultJvmMetrics.live.unit,
     )
-
 }

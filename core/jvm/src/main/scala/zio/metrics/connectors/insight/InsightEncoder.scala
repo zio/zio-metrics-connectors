@@ -7,7 +7,7 @@ import zio.metrics.MetricKey
 import zio.metrics.MetricState
 import zio.metrics.connectors.MetricEvent
 
-case object InsightEncoder {
+private[connectors] case object InsightEncoder {
   def encode(event: MetricEvent): ZIO[Any, Nothing, (MetricKey[Any], MetricState[Any])] =
     ZIO.succeed(encodeMetric(event.metricKey, event.current, event.timestamp))
 

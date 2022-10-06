@@ -5,10 +5,10 @@ import zio.metrics.connectors.internal.MetricsClient
 
 package object insight {
 
-  lazy val publisherLayer: ULayer[InsightPublisher] = ZLayer.fromZIO(InsightPublisher.make)
+  private lazy val publisherLayer: ULayer[InsightPublisher] = ZLayer.fromZIO(InsightPublisher.make)
 
-  lazy val insightLayer: ZLayer[MetricsConfig & InsightPublisher, Nothing, Unit] =
-    ZLayer.fromZIO(
+  lazy val insightLayer: ZLayer[MetricsConfig, Nothing, InsightPublisher] =
+    (publisherLayer ++ ZLayer.service[MetricsConfig]) >+> ZLayer.fromZIO(
       ZIO.service[InsightPublisher].flatMap(clt => MetricsClient.make(insightHandler(clt))).unit,
     )
 

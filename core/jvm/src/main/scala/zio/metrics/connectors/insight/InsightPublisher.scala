@@ -5,7 +5,7 @@ import java.time.Instant
 import zio._
 import zio.metrics.{MetricKey, MetricKeyType, MetricPair, MetricState}
 
-class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any]]]) {
+private[connectors] class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any]]]) {
 
   /**
    * Return all metric keys.
@@ -41,7 +41,7 @@ class InsightPublisher private (current: Ref[Map[MetricKey[Any], MetricState[Any
     current.update(_ + next)
 }
 
-object InsightPublisher {
+private[connectors] object InsightPublisher {
   def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[MetricKey[Any], MetricState[Any]])
   } yield new InsightPublisher(current)
