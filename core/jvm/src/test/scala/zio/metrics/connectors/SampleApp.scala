@@ -1,18 +1,24 @@
 package zio.metrics.connectors
 
 import zio._
+import zio.json._
+import zio.metrics.connectors.insight.ClientMessage
+import zio.metrics.connectors.insight.ClientMessage.encAvailableMetrics
+import zio.metrics.connectors.insight.InsightPublisher
 import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
+import zio.stm.TRef
 
 import zhttp.html._
 import zhttp.http._
+import zhttp.http.middleware.HttpMiddleware
 import zhttp.service.EventLoopGroup
 import zhttp.service.Server
 import zhttp.service.server.ServerChannelFactory
 
-object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
+object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
   private val bindPort = 8080
   private val nThreads = 5
@@ -24,6 +30,7 @@ object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
       |<title>Simple Server</title>
       |<body>
       |<p><a href="/metrics">Metrics</a></p>
+      |<p><a href="/insight/metrics">Insight Metrics: Get all keys</a></p>
       |</body
       |</html>""".stripMargin
 
@@ -36,7 +43,37 @@ object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
         ZIO.serviceWithZIO[PrometheusPublisher](_.get.map(Response.text))
       }
 
-  private val server = Server.port(bindPort) ++ Server.app(static ++ prometheusRouter)
+  private lazy val insightAllKeysRouter =
+    Http.collectZIO[Request] { case Method.GET -> !! / "insight" / "keys" =>
+      ZIO.serviceWithZIO[InsightPublisher](_.getAllKeys.map(_.toJson).map(Response.json))
+    }
+
+  // POST: /insight/metrics body Seq[MetricKey] => Seq[MetricsNotification]
+  // TODO: Should we add an additional module with a layer implementation for zio-http?
+  // should be added (at some point) to zio-http ...
+  private lazy val insightGetMetricsRouter =
+    Http.collectZIO[Request] { case req @ Method.POST -> !! / "insight" / "metrics" =>
+      for {
+        request  <- req.body.asString.map(_.fromJson[ClientMessage.AvailableMetrics])
+        response <- request match {
+                      case Left(e)  =>
+                        ZIO
+                          .debug(s"Failed to parse the input: $e")
+                          .as(
+                            Response.text(e).setStatus(Status.BadRequest),
+                          )
+                      case Right(r) =>
+                        ZIO
+                          .serviceWithZIO[InsightPublisher](_.getMetrics(r.keys))
+                          .map(_.toJson)
+                          .map(Response.json)
+                    }
+      } yield response
+
+    }
+
+  private val server =
+    Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightAllKeysRouter ++ insightGetMetricsRouter)
 
   private lazy val runHttp = (server.start *> ZIO.never).forkDaemon
 
@@ -64,10 +101,12 @@ object ZmxSampleApp extends ZIOAppDefault with InstrumentedSample {
       // NewRelicConfig.fromEnvEULayer,
       // newrelic.newRelicLayer,
 
+      // The inisght reporting layer
+      insight.insightLayer,
+
       // Enable the ZIO internal metrics and the default JVM metricsConfig
       // Do NOT forget the .unit for the JVM metrics layer
       Runtime.enableRuntimeMetrics,
       DefaultJvmMetrics.live.unit,
     )
-
 }

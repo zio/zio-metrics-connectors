@@ -46,7 +46,7 @@ object NewRelicClient {
               method = Method.POST,
               url = url,
               headers = headers,
-              data = HttpData.fromString(body),
+              body = Body.fromString(body),
             )
           }
 

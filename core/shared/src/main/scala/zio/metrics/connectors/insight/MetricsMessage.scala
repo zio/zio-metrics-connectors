@@ -146,13 +146,28 @@ object ClientMessage {
     cltId: String,
     subId: String,
     when: Instant,
-    states: Set[MetricPair.Untyped])
-      extends ClientMessage
+    states: Set[(MetricKey[Any], MetricState[Any])]
+  ) extends ClientMessage
 
   /**
-   * A message sent by the server to announce the metrics currently available
+   * A response sent by the server for a selection of metrics requested by the client
+   */
+  final case class MetricsResponse(
+    when: Instant,
+    states: Set[(MetricKey[Any], MetricState[Any])])
+      extends ClientMessage
+
+  implicit lazy val encMetricsResponse: JsonEncoder[MetricsResponse] = DeriveJsonEncoder.gen[MetricsResponse]
+  implicit lazy val decMetricsResponse: JsonDecoder[MetricsResponse] = DeriveJsonDecoder.gen[MetricsResponse]
+
+  /**
+   * A message sent by the server to announce the metrics currently available. Also used to request
+   * a selection of metrics that the client is interested in.
    */
   final case class AvailableMetrics(keys: Set[MetricKey[Any]]) extends ClientMessage
+
+  implicit lazy val encAvailableMetrics: JsonEncoder[AvailableMetrics] = DeriveJsonEncoder.gen[AvailableMetrics]
+  implicit lazy val decAvailableMetrics: JsonDecoder[AvailableMetrics] = DeriveJsonDecoder.gen[AvailableMetrics]
 
   implicit lazy val encNotification: JsonEncoder[MetricPair.Untyped] =
     JsonEncoder[(MetricKey[Any], MetricState[_])].contramap[MetricPair.Untyped] { pair =>
