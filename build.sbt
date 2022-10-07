@@ -42,10 +42,10 @@ lazy val core =
   crossProject(JSPlatform, JVMPlatform)
     .in(file("core"))
     .settings(
-      run / fork := true,
+      run / fork             := true,
       Test / run / javaOptions += "-Djava.net.preferIPv4Stack=true",
       Test / run / mainClass := Some("zio.metrics.connectors.SampleApp"),
-      cancelable := true,
+      cancelable             := true,
       stdSettings("zio.metrics.connectors"),
       libraryDependencies ++= Seq(
         "dev.zio" %%% "zio"          % Version.zio,

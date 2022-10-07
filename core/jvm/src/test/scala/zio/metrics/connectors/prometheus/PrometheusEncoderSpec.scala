@@ -1,9 +1,9 @@
-package zio.zmx.prometheus
+package zio.metrics.connectors.prometheus
 
 import zio._
 import zio.metrics._
 import zio.metrics.connectors._
-import zio.metrics.connectors.prometheus.PrometheusEncoder
+import zio.metrics.connectors.MetricEvent._
 import zio.test._
 import zio.test.TestAspect._
 
@@ -18,7 +18,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
     for {
       event <- ZIO
                  .clockWith(_.instant)
-                 .map(now => MetricEvent.New(MetricKey.counter("countMe"), MetricState.Counter(v), now))
+                 .map(now => New(MetricKey.counter("countMe"), MetricState.Counter(v), now))
       text  <- PrometheusEncoder.encode(event)
     } yield assertTrue(
       text.equals(

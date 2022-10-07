@@ -5,15 +5,13 @@ import zio.json._
 import zio.metrics.connectors.insight.ClientMessage
 import zio.metrics.connectors.insight.ClientMessage.encAvailableMetrics
 import zio.metrics.connectors.insight.InsightPublisher
-import zio.metrics.connectors.newrelic.NewRelicConfig
+//import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
-import zio.stm.TRef
 
 import zhttp.html._
 import zhttp.http._
-import zhttp.http.middleware.HttpMiddleware
 import zhttp.service.EventLoopGroup
 import zhttp.service.Server
 import zhttp.service.server.ServerChannelFactory

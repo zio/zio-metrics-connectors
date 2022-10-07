@@ -28,19 +28,19 @@ sealed trait MetricEvent {
 
 object MetricEvent {
 
-  final case class New private (
+  final case class New private[connectors] (
     override val metricKey: MetricKey.Untyped,
     override val current: MetricState.Untyped,
     override val timestamp: Instant)
       extends MetricEvent
 
-  final case class Unchanged private (
+  final case class Unchanged private[connectors] (
     override val metricKey: MetricKey.Untyped,
     override val current: MetricState.Untyped,
     override val timestamp: Instant)
       extends MetricEvent
 
-  final case class Updated private (
+  final case class Updated private[connectors] (
     override val metricKey: MetricKey.Untyped,
     oldState: MetricState.Untyped,
     override val current: MetricState.Untyped,

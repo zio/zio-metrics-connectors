@@ -85,7 +85,6 @@ object MetricsMessageSpec extends ZIOSpecDefault {
     genKey
       .map(_.asInstanceOf[MetricKey.Untyped])
       .flatMap { key =>
-
         key.keyType match {
           case kc if kc.isInstanceOf[MetricKeyType.Counter]   => genStateCounter.map((key, _))
           case kg if kg.isInstanceOf[MetricKeyType.Gauge]     => genStateGauge.map((key, _))

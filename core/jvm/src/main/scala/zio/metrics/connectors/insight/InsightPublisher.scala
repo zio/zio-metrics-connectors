@@ -26,8 +26,7 @@ private[connectors] class InsightPublisher private (current: Ref[Map[MetricKey[A
                   })
       result    = ClientMessage.MetricsResponse(
                     Instant.now,
-                    filtered
-                      .toSet,
+                    filtered.toSet,
                   )
     } yield result
 
