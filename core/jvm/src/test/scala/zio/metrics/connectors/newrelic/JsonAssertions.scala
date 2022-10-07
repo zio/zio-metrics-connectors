@@ -1,7 +1,6 @@
 package zio.metrics.connectors.newrelic
 
 import zio.json.ast._
-import zio.metrics.connectors.newrelic.NewRelicEncoder
 import zio.test.Assertion
 import zio.test.Assertion._
 import zio.test.TestArrow

@@ -4,7 +4,6 @@ import zio._
 import zio.metrics._
 import zio.metrics.connectors._
 import zio.metrics.connectors.MetricEvent._
-import zio.metrics.connectors.prometheus.PrometheusEncoder
 import zio.test._
 import zio.test.TestAspect._
 
