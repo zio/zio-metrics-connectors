@@ -81,25 +81,24 @@ object MetricsMessageSpec extends ZIOSpecDefault {
 
   // For a single pair we take a generated key and dependent on the key type we generate
   // a state matching the MetricKeyType
-  private val genSinglePair: Gen[Sized, MetricPair.Untyped] =
+  private val genSinglePair: Gen[Sized, (MetricKey[Any], MetricState[Any])] =
     genKey
       .map(_.asInstanceOf[MetricKey.Untyped])
       .flatMap { key =>
-        val lossy = key.asInstanceOf[MetricKey[MetricKeyType { type Out = Any }]]
 
         key.keyType match {
-          case kc if kc.isInstanceOf[MetricKeyType.Counter]   => genStateCounter.map(MetricPair(lossy, _))
-          case kg if kg.isInstanceOf[MetricKeyType.Gauge]     => genStateGauge.map(MetricPair(lossy, _))
-          case kf if kf.isInstanceOf[MetricKeyType.Frequency] => genStateFrequency.map(MetricPair(lossy, _))
-          case ks if ks.isInstanceOf[MetricKeyType.Summary]   => genStateSummary.map(MetricPair(lossy, _))
-          case kh if kh.isInstanceOf[MetricKeyType.Histogram] => genStateHistogram.map(MetricPair(lossy, _))
+          case kc if kc.isInstanceOf[MetricKeyType.Counter]   => genStateCounter.map((key, _))
+          case kg if kg.isInstanceOf[MetricKeyType.Gauge]     => genStateGauge.map((key, _))
+          case kf if kf.isInstanceOf[MetricKeyType.Frequency] => genStateFrequency.map((key, _))
+          case ks if ks.isInstanceOf[MetricKeyType.Summary]   => genStateSummary.map((key, _))
+          case kh if kh.isInstanceOf[MetricKeyType.Histogram] => genStateHistogram.map((key, _))
 
           case _ => throw new RuntimeException("Boom")
         }
       }
 
   // Now we can generate a set of pairs for a more realistic state
-  private val genMetricPairs: Gen[Sized, Set[MetricPair.Untyped]] =
+  private val genMetricPairs: Gen[Sized, Set[(MetricKey[Any], MetricState[Any])]] =
     Gen.setOfBounded(1, 10)(genSinglePair)
 
   // A generator for Client Connect messages
