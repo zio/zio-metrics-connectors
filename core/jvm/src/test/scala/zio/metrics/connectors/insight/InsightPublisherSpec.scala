@@ -1,8 +1,8 @@
 package zio.metrics.connectors.insight
 
 import zio.ZIO
-import zio.metrics.connectors.Generators
 import zio.metrics.{MetricPair, MetricState}
+import zio.metrics.connectors.Generators
 import zio.test._
 
 object InsightPublisherSpec extends ZIOSpecDefault with Generators {
