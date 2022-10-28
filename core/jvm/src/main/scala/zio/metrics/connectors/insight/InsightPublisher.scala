@@ -34,7 +34,7 @@ private[connectors] class InsightPublisher private (current: Ref[Map[MetricKey[A
     current.update(_ + next)
 }
 
-object InsightPublisher {
+private[connectors] object InsightPublisher {
   def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[MetricKey[Any], MetricState[Any]])
   } yield new InsightPublisher(current)
