@@ -14,7 +14,7 @@ trait StatsdClient {
   private[connectors] def send(chunk: Chunk[Byte]): Long
 }
 
-private[statsd] object StatsdClient {
+private[connectors] object StatsdClient {
 
   private class Live(channel: DatagramChannel) extends StatsdClient {
 
