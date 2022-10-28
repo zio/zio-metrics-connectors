@@ -100,32 +100,19 @@ object MetricsMessageSpec extends ZIOSpecDefault {
   private val genMetricPairs: Gen[Sized, Set[(MetricKey[Any], MetricState[Any])]] =
     Gen.setOfBounded(1, 10)(genSinglePair)
 
-  // A generator for Client Connect messages
-  private val genConnect: Gen[Any, ClientMessage] = Gen.const(ClientMessage.Connect)
-
-  // A generator for Connected messages
-  private val genConnected: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Connected.apply)
-
-  // A generator for Disconnected messages
-  private val genDisconnect: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Disconnect.apply)
-
-  // A generator for Subscription removals
-  private val genRemoveSubscription: Gen[Sized, ClientMessage] =
-    genNonEmpty.zip(genNonEmpty).map { case (con, sub) => ClientMessage.RemoveSubscription(con, sub) }
-
-  // A generator for available keys
-  private val genAvailableKeys: Gen[Sized, ClientMessage] =
+  // A generator for available metric keys
+  private val genAvailableMetrics: Gen[Sized, ClientMessage] =
     Gen.setOfBounded[Sized, MetricKey[Any]](1, 10)(genKey).map(ClientMessage.AvailableMetrics.apply)
 
-  // A generator for MetricsUpdates
-  private val genNotification: Gen[Sized, ClientMessage] =
-    genNonEmpty.zip(genNonEmpty).zip(genMetricPairs).map { case (cltId, subId, states) =>
-      ClientMessage.MetricsNotification(cltId, subId, Instant.now().truncatedTo(ChronoUnit.MILLIS), states)
-    }
+  // A generator for metrics responses
+  private val genMetricsResponses: Gen[Sized, ClientMessage] =
+    Gen
+      .setOfBounded[Sized, (MetricKey[Any], MetricState[Any])](1, 10)(genSinglePair)
+      .map(ClientMessage.MetricsResponse.apply)
 
   // A generator for random Client Messages
   private val genClientMsg: Gen[Sized, ClientMessage] =
-    Gen.oneOf(genConnect, genConnected, genDisconnect, genRemoveSubscription, genAvailableKeys, genNotification)
+    Gen.oneOf(genAvailableMetrics, genMetricsResponses)
 
   private val serdeMetricsLabel =
     test("the Metrics Labels should serialize to/from json correctly")(check(genLabel) { label =>

@@ -1,7 +1,5 @@
 package zio.metrics.connectors.insight
 
-import java.time.Instant
-
 import zio._
 import zio.metrics.{MetricKey, MetricState}
 
@@ -25,7 +23,6 @@ private[connectors] class InsightPublisher private (current: Ref[Map[MetricKey[A
                     selection.exists(key == _)
                   })
       result    = ClientMessage.MetricsResponse(
-                    Instant.now,
                     filtered.toSet,
                   )
     } yield result
@@ -37,7 +34,7 @@ private[connectors] class InsightPublisher private (current: Ref[Map[MetricKey[A
     current.update(_ + next)
 }
 
-private[connectors] object InsightPublisher {
+object InsightPublisher {
   def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[MetricKey[Any], MetricState[Any]])
   } yield new InsightPublisher(current)

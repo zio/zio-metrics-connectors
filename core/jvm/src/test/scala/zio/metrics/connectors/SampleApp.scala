@@ -28,7 +28,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       |<title>Simple Server</title>
       |<body>
       |<p><a href="/metrics">Metrics</a></p>
-      |<p><a href="/insight/metrics">Insight Metrics: Get all keys</a></p>
+      |<p><a href="/insight/keys">Insight Metrics: Get all keys</a></p>
       |</body
       |</html>""".stripMargin
 

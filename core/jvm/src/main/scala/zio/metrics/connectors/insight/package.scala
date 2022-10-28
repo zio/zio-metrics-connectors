@@ -12,24 +12,17 @@ package object insight {
       ZIO.service[InsightPublisher].flatMap(clt => MetricsClient.make(insightHandler(clt))).unit,
     )
 
-  private def insightHandler(clt: InsightPublisher): Iterable[MetricEvent] => UIO[Unit] = events => {
+  private def insightHandler(clt: InsightPublisher): Iterable[MetricEvent] => UIO[Unit] =
+    events => {
 
-    val evtFilter: MetricEvent => Boolean = {
-      case MetricEvent.Unchanged(_, _, _) => false
-      case _                              => true
-    }
+      val evtFilter: MetricEvent => Boolean = {
+        case MetricEvent.Unchanged(_, _, _) => false
+        case _                              => true
+      }
 
-    val update =
       ZIO
-        .foreach(events.filter(evtFilter))(evt =>
-          for {
-            encoded <- InsightEncoder.encode(evt)
-            _       <- clt.set(encoded)
-          } yield (),
-        )
+        .foreach(events.filter(evtFilter))(evt => clt.set((evt.metricKey, evt.current)))
         .unit
-
-    update
-  }
+    }
 
 }

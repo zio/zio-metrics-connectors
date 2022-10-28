@@ -55,34 +55,64 @@ object MetricsMessageImplicits {
   implicit val decMetricLabel: JsonDecoder[MetricLabel] =
     DeriveJsonDecoder.gen[MetricLabel]
 
-  // We map a metric key as a tuple:
-  //  - The name of the key
-  //  - The tags of the key
-  //  - The metric Key as a String
-  //  - The Json encoded Key details if needed
+  /**
+   *  We map a metric key as a [[MetricKeySerialization]] so that we can
+   *  yield the following serialization structure:
+   *
+   * Example:
+   * {{{
+   * {
+   *    "name": "The name of the key",
+   *    "tags": [
+   *       {
+   *          "key": "pool",
+   *          "value": "CodeHeap 'non-nmethods'"
+   *       }
+   *    ],
+   *    "type": "Gauge",
+   *    "details": {}
+   * }
+   * }}}
+   *
+   * @param name The name of the key
+   * @param tags The tags of the key
+   * @param keyType The metric Key as a String
+   * @param The Json encoded Key details if needed
+   */
+  case class MetricKeySerialization(
+    name: String,
+    tags: Set[MetricLabel],
+    keyType: String,
+    details: String)
+
+  implicit val encMetricKeySerialization: JsonEncoder[MetricKeySerialization] =
+    DeriveJsonEncoder.gen[MetricKeySerialization]
+
+  implicit val decMetricKeySerialization: JsonDecoder[MetricKeySerialization] =
+    DeriveJsonDecoder.gen[MetricKeySerialization]
 
   implicit val encMetricKey: JsonEncoder[MetricKey[Any]] =
-    JsonEncoder[(String, Set[MetricLabel], String, String)].contramap[MetricKey[Any]] { key =>
+    JsonEncoder[MetricKeySerialization].contramap[MetricKey[Any]] { key =>
       key.keyType match {
         case MetricKeyType.Counter       =>
-          (key.name, key.tags, KeyTypes.Counter.name, "{}")
+          MetricKeySerialization(key.name, key.tags, KeyTypes.Counter.name, "{}")
         case MetricKeyType.Gauge         =>
-          (key.name, key.tags, KeyTypes.Gauge.name, "{}")
+          MetricKeySerialization(key.name, key.tags, KeyTypes.Gauge.name, "{}")
         case MetricKeyType.Frequency     =>
-          (key.name, key.tags, KeyTypes.Frequency.name, "{}")
+          MetricKeySerialization(key.name, key.tags, KeyTypes.Frequency.name, "{}")
         case hk: MetricKeyType.Histogram =>
-          (key.name, key.tags, KeyTypes.Histogram.name, hk.toJson)
+          MetricKeySerialization(key.name, key.tags, KeyTypes.Histogram.name, hk.toJson)
         case sk: MetricKeyType.Summary   =>
-          (key.name, key.tags, KeyTypes.Summary.name, sk.toJson)
+          MetricKeySerialization(key.name, key.tags, KeyTypes.Summary.name, sk.toJson)
         // This should not happen at all
-        case _                           => (key.name, key.tags, "Untyped", "{}")
+        case _                           => MetricKeySerialization(key.name, key.tags, "Untyped", "{}")
       }
     }
 
   implicit val decMetricKey: JsonDecoder[MetricKey[_]] = {
     import KeyTypes._
 
-    JsonDecoder[(String, Set[MetricLabel], String, String)].mapOrFail { case (name, tags, keyType, details) =>
+    JsonDecoder[MetricKeySerialization].mapOrFail { case MetricKeySerialization(name, tags, keyType, details) =>
       keyType match {
         case Counter.name   => Right(MetricKey.counter(name).tagged(tags))
         case Gauge.name     => Right(MetricKey.gauge(name).tagged(tags))
@@ -106,61 +136,6 @@ object ClientMessage {
   import MetricsMessageImplicits._
 
   /**
-   * A message from a client to the server to initialize a new connection
-   */
-  case object Connect extends ClientMessage
-
-  /**
-   * The response from the server to the client for a successful Connection.
-   *
-   * @param cltId The connection id for the new connection
-   */
-  final case class Connected(cltId: String) extends ClientMessage
-
-  /**
-   * A message from the client to the server to close an existing connection
-   *
-   * @param cltId The id of the connection to be closed
-   */
-  final case class Disconnect(cltId: String) extends ClientMessage
-
-  /**
-   * A message from a formerly connected client to create or replace a subscription with a given id
-   */
-  final case class Subscription(
-    clt: String,
-    id: String,
-    keys: Set[MetricKey[Any]],
-    interval: Duration)
-      extends ClientMessage
-
-  /**
-   * A message sent from the client to remove a specific subscription
-   */
-  final case class RemoveSubscription(clt: String, id: String) extends ClientMessage
-
-  /**
-   * A message sent from the server a an update for a specific subscription
-   */
-  final case class MetricsNotification(
-    cltId: String,
-    subId: String,
-    when: Instant,
-    states: Set[(MetricKey[Any], MetricState[Any])])
-      extends ClientMessage
-
-  /**
-   * A response sent by the server for a selection of metrics requested by the client
-   */
-  final case class MetricsResponse(
-    when: Instant,
-    states: Set[(MetricKey[Any], MetricState[Any])])
-      extends ClientMessage
-
-  implicit lazy val encMetricsResponse: JsonEncoder[MetricsResponse] = DeriveJsonEncoder.gen[MetricsResponse]
-  implicit lazy val decMetricsResponse: JsonDecoder[MetricsResponse] = DeriveJsonDecoder.gen[MetricsResponse]
-
-  /**
    * A message sent by the server to announce the metrics currently available. Also used to request
    * a selection of metrics that the client is interested in.
    */
@@ -169,15 +144,15 @@ object ClientMessage {
   implicit lazy val encAvailableMetrics: JsonEncoder[AvailableMetrics] = DeriveJsonEncoder.gen[AvailableMetrics]
   implicit lazy val decAvailableMetrics: JsonDecoder[AvailableMetrics] = DeriveJsonDecoder.gen[AvailableMetrics]
 
-  implicit lazy val encNotification: JsonEncoder[MetricPair.Untyped] =
-    JsonEncoder[(MetricKey[Any], MetricState[_])].contramap[MetricPair.Untyped] { pair =>
-      (pair.metricKey.asInstanceOf[MetricKey[Any]], pair.metricState)
-    }
+  /**
+   * A response sent by the server for a selection of metrics requested by the client
+   */
+  final case class MetricsResponse(
+    states: Set[(MetricKey[Any], MetricState[Any])])
+      extends ClientMessage
 
-  implicit lazy val decNotification: JsonDecoder[MetricPair.Untyped] =
-    JsonDecoder[(MetricKey[Any], MetricState[_])].map { case (key, state) =>
-      MetricPair(key.asInstanceOf[MetricKey[MetricKeyType { type Out = Any }]], state.asInstanceOf[MetricState[Any]])
-    }
+  implicit lazy val encMetricsResponse: JsonEncoder[MetricsResponse] = DeriveJsonEncoder.gen[MetricsResponse]
+  implicit lazy val decMetricsResponse: JsonDecoder[MetricsResponse] = DeriveJsonDecoder.gen[MetricsResponse]
 
   implicit lazy val encClientMessage: JsonEncoder[ClientMessage] = DeriveJsonEncoder.gen[ClientMessage]
   implicit lazy val decClientMessage: JsonDecoder[ClientMessage] = DeriveJsonDecoder.gen[ClientMessage]
