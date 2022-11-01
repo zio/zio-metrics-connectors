@@ -100,8 +100,8 @@ object MetricsMessageSpec extends ZIOSpecDefault {
   private val genMetricPairs: Gen[Sized, Set[(MetricKey[Any], MetricState[Any])]] =
     Gen.setOfBounded(1, 10)(genSinglePair)
 
-  // Generate Timestamp
-  private val genSingleTimestamp: Gen[Any, Instant] = Gen.instant
+  // Generate Timestamp, FIXME: Gen.instant does not work with scala.js
+  private val genSingleTimestamp: Gen[Any, Instant] = Gen.const(Instant.parse("2022-11-01T15:12:15.214Z"))
 
   // Generate single MetricKeyWithId
   private val genSingleMetricKeyWithId: Gen[Any, MetricKeyWithId] = for {
