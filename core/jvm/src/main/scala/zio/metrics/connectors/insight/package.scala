@@ -21,7 +21,7 @@ package object insight {
       }
 
       ZIO
-        .foreach(events.filter(evtFilter))(evt => clt.set((evt.metricKey, evt.current)))
+        .foreach(events.filter(evtFilter))(evt => InsightEncoder.encode(evt).flatMap(clt.set(_)))
         .unit
     }
 

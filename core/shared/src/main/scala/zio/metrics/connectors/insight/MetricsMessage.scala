@@ -1,6 +1,7 @@
 package zio.metrics.connectors.insight
 
 import java.time.Instant
+import java.util.UUID
 
 import zio._
 import zio.json._
@@ -56,63 +57,62 @@ object MetricsMessageImplicits {
     DeriveJsonDecoder.gen[MetricLabel]
 
   /**
-   *  We map a metric key as a [[MetricKeySerialization]] so that we can
+   *  We map a metric key as a [[MetricKeyTransfer]] so that we can
    *  yield the following serialization structure:
    *
    * Example:
    * {{{
    * {
    *    "name": "The name of the key",
-   *    "tags": [
+   *    "labels": [
    *       {
    *          "key": "pool",
    *          "value": "CodeHeap 'non-nmethods'"
    *       }
    *    ],
-   *    "type": "Gauge",
-   *    "details": {}
+   *    "metricType": "Gauge",
+   *    details": "{}"
    * }
    * }}}
    *
    * @param name The name of the key
-   * @param tags The tags of the key
-   * @param keyType The metric Key as a String
-   * @param The Json encoded Key details if needed
+   * @param labels The labels of the key
+   * @param metricType The type of the metric the key points to
    */
-  case class MetricKeySerialization(
+  case class MetricKeyTransfer(
     name: String,
-    tags: Set[MetricLabel],
-    keyType: String,
+    labels: Set[MetricLabel],
+    metricType: String,
     details: String)
 
-  implicit val encMetricKeySerialization: JsonEncoder[MetricKeySerialization] =
-    DeriveJsonEncoder.gen[MetricKeySerialization]
+  implicit val encMetricKeyTransfer: JsonEncoder[MetricKeyTransfer] =
+    DeriveJsonEncoder.gen[MetricKeyTransfer]
 
-  implicit val decMetricKeySerialization: JsonDecoder[MetricKeySerialization] =
-    DeriveJsonDecoder.gen[MetricKeySerialization]
+  implicit val decMetricKeyTransfer: JsonDecoder[MetricKeyTransfer] =
+    DeriveJsonDecoder.gen[MetricKeyTransfer]
 
   implicit val encMetricKey: JsonEncoder[MetricKey[Any]] =
-    JsonEncoder[MetricKeySerialization].contramap[MetricKey[Any]] { key =>
+    JsonEncoder[MetricKeyTransfer].contramap[MetricKey[Any]] { key =>
       key.keyType match {
         case MetricKeyType.Counter       =>
-          MetricKeySerialization(key.name, key.tags, KeyTypes.Counter.name, "{}")
+          MetricKeyTransfer(key.name, key.tags, KeyTypes.Counter.name, "{}")
         case MetricKeyType.Gauge         =>
-          MetricKeySerialization(key.name, key.tags, KeyTypes.Gauge.name, "{}")
+          MetricKeyTransfer(key.name, key.tags, KeyTypes.Gauge.name, "{}")
         case MetricKeyType.Frequency     =>
-          MetricKeySerialization(key.name, key.tags, KeyTypes.Frequency.name, "{}")
+          MetricKeyTransfer(key.name, key.tags, KeyTypes.Frequency.name, "{}")
         case hk: MetricKeyType.Histogram =>
-          MetricKeySerialization(key.name, key.tags, KeyTypes.Histogram.name, hk.toJson)
+          MetricKeyTransfer(key.name, key.tags, KeyTypes.Histogram.name, hk.toJson)
         case sk: MetricKeyType.Summary   =>
-          MetricKeySerialization(key.name, key.tags, KeyTypes.Summary.name, sk.toJson)
+          MetricKeyTransfer(key.name, key.tags, KeyTypes.Summary.name, sk.toJson)
         // This should not happen at all
-        case _                           => MetricKeySerialization(key.name, key.tags, "Untyped", "{}")
+        case _                           => MetricKeyTransfer(key.name, key.tags, "Untyped", "{}")
       }
     }
 
   implicit val decMetricKey: JsonDecoder[MetricKey[_]] = {
     import KeyTypes._
 
-    JsonDecoder[MetricKeySerialization].mapOrFail { case MetricKeySerialization(name, tags, keyType, details) =>
+    JsonDecoder[MetricKeyTransfer].mapOrFail { case MetricKeyTransfer(name, tags, keyType, details) =>
       keyType match {
         case Counter.name   => Right(MetricKey.counter(name).tagged(tags))
         case Gauge.name     => Right(MetricKey.gauge(name).tagged(tags))
@@ -135,20 +135,55 @@ object ClientMessage {
 
   import MetricsMessageImplicits._
 
+  final case class MetricKeyWithId(id: UUID, key: MetricKey[Any])
+
+  implicit lazy val encMetricKeyWithId: JsonEncoder[MetricKeyWithId]  = DeriveJsonEncoder.gen[MetricKeyWithId]
+  implicit lazy val decAMetricKeyWithId: JsonDecoder[MetricKeyWithId] = DeriveJsonDecoder.gen[MetricKeyWithId]
+
   /**
-   * A message sent by the server to announce the metrics currently available. Also used to request
-   * a selection of metrics that the client is interested in.
+   * A message sent by the server to announce the metrics currently available.
    */
-  final case class AvailableMetrics(keys: Set[MetricKey[Any]]) extends ClientMessage
+  final case class AvailableMetrics(keys: Set[MetricKeyWithId]) extends ClientMessage
 
   implicit lazy val encAvailableMetrics: JsonEncoder[AvailableMetrics] = DeriveJsonEncoder.gen[AvailableMetrics]
   implicit lazy val decAvailableMetrics: JsonDecoder[AvailableMetrics] = DeriveJsonDecoder.gen[AvailableMetrics]
 
   /**
+   * A selection of metric UUIDs
+   * @param selection A set of UUIDs
+   */
+  final case class MetricsSelection(selection: Set[UUID])
+
+  implicit lazy val encMetricsSelection: JsonEncoder[MetricsSelection] =
+    DeriveJsonEncoder.gen[MetricsSelection]
+  implicit lazy val decMetricsSelection: JsonDecoder[MetricsSelection] =
+    DeriveJsonDecoder.gen[MetricsSelection]
+
+  /**
+   * The extended metric state that the insight connector is tracking, which also
+   * allows us to provide a nicer API.
+   *
+   * @param id        The UUID of the metric.
+   * @param key       The key of the metric.
+   * @param state     The state of the metric.
+   * @param timestamp The timestamp of when the metric was emitted.
+   */
+  final case class InsightMetricState(
+    id: UUID,
+    key: MetricKey[Any],
+    state: MetricState[Any],
+    timestamp: Instant)
+
+  implicit lazy val encInsightMetricState: JsonEncoder[InsightMetricState] =
+    DeriveJsonEncoder.gen[InsightMetricState]
+  implicit lazy val decInsightMetricState: JsonDecoder[InsightMetricState] =
+    DeriveJsonDecoder.gen[InsightMetricState]
+
+  /**
    * A response sent by the server for a selection of metrics requested by the client
    */
   final case class MetricsResponse(
-    states: Set[(MetricKey[Any], MetricState[Any])])
+    states: Set[InsightMetricState])
       extends ClientMessage
 
   implicit lazy val encMetricsResponse: JsonEncoder[MetricsResponse] = DeriveJsonEncoder.gen[MetricsResponse]

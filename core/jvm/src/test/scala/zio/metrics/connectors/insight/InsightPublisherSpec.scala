@@ -1,13 +1,14 @@
 package zio.metrics.connectors.insight
 
 import zio.ZIO
-import zio.metrics.{MetricPair, MetricState}
+import zio.metrics.{MetricKey, MetricState}
 import zio.metrics.connectors.Generators
+import zio.metrics.connectors.MetricEvent.New
 import zio.test._
 
 object InsightPublisherSpec extends ZIOSpecDefault with Generators {
 
-  def spec = addGauges
+  def spec = addCounter
 
   // 1. [x] instantiate InsightPublisher
   // 2. Generate set of metrics
@@ -17,14 +18,21 @@ object InsightPublisherSpec extends ZIOSpecDefault with Generators {
 
   val insightPublisher: ZIO[Any, Nothing, InsightPublisher] = InsightPublisher.make
 
-  private val addGauges = test("Add gauges to InsightPublisher") {
-    check(genGauge) { case (pair: MetricPair.Untyped, state: MetricState.Gauge) =>
+  private val addCounter = test("Add counter to InsightPublisher") {
+    check(genPosDouble) { v =>
       for {
-        ip     <- insightPublisher
-        _      <- ip.set((pair.metricKey, state))
-        fromIp <- ip.getMetrics(Seq(pair.metricKey))
+        ip      <- insightPublisher
+        event   <- ZIO
+                     .clockWith(_.instant)
+                     .map(now => New(MetricKey.counter("countMe"), MetricState.Counter(v), now))
+        encoded <- InsightEncoder.encode(event)
+        _       <- ip.set(encoded)
+        fromIp  <- ip.getMetrics(Seq(encoded._1))
       } yield assertTrue(fromIp.states.size == 1) &&
-        assertTrue(fromIp.states.head._2.asInstanceOf[MetricState.Gauge] == state)
+        assertTrue(
+          fromIp.states.head.state.asInstanceOf[MetricState.Counter] == encoded._2.state
+            .asInstanceOf[MetricState.Counter],
+        )
     }
   }
 

@@ -1,11 +1,11 @@
 package zio.metrics.connectors.insight
 
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 import zio.{Chunk, Duration}
 import zio.json._
 import zio.metrics._
+import zio.metrics.connectors.insight.ClientMessage.{InsightMetricState, MetricKeyWithId}
 import zio.metrics.connectors.insight.MetricsMessageImplicits._
 import zio.test._
 
@@ -51,7 +51,7 @@ object MetricsMessageSpec extends ZIOSpecDefault {
     }
 
   // A generator for MetricKeys
-  private val genKey: Gen[Sized, MetricKey[Any]] =
+  private val genKey: Gen[Any, MetricKey[Any]] =
     Gen.oneOf(genKeyCounter, genKeyGauge, genKeyFrequency, genKeyHistogram, genKeySummary)
 
   // A generator for Counter State
@@ -100,14 +100,48 @@ object MetricsMessageSpec extends ZIOSpecDefault {
   private val genMetricPairs: Gen[Sized, Set[(MetricKey[Any], MetricState[Any])]] =
     Gen.setOfBounded(1, 10)(genSinglePair)
 
+  // Generate Timestamp
+  private val genSingleTimestamp: Gen[Any, Instant] = Gen.instant
+
+  // Generate single MetricKeyWithId
+  private val genSingleMetricKeyWithId: Gen[Any, MetricKeyWithId] = for {
+    key    <- genKey.map(_.asInstanceOf[MetricKey.Untyped])
+    uuid <- Gen.uuid // FIXME: Gen.const(java.util.UUID.nameUUIDFromBytes(key.toString.getBytes))
+    result <- Gen.const(MetricKeyWithId(uuid, key))
+  } yield result
+
+  // Generate a set of MetricKeyWithId
+  private val genMetricKeyWithId: Gen[Sized, Set[MetricKeyWithId]] =
+    Gen.setOfBounded(1, 10)(genSingleMetricKeyWithId)
+
+  // Generate single InsightMetricState
+  private val genSingleInsightMetricState: Gen[Any, InsightMetricState] = for {
+    key       <- genKey.map(_.asInstanceOf[MetricKey.Untyped])
+    state     <- key.keyType match {
+                   case kc if kc.isInstanceOf[MetricKeyType.Counter]   => genStateCounter
+                   case kg if kg.isInstanceOf[MetricKeyType.Gauge]     => genStateGauge
+                   case kf if kf.isInstanceOf[MetricKeyType.Frequency] => genStateFrequency
+                   case ks if ks.isInstanceOf[MetricKeyType.Summary]   => genStateSummary
+                   case kh if kh.isInstanceOf[MetricKeyType.Histogram] => genStateHistogram
+                   case _                                              => throw new RuntimeException("Boom")
+                 }
+    uuid <- Gen.uuid // FIXME: Gen.const(java.util.UUID.nameUUIDFromBytes(key.toString.getBytes))
+    timestamp <- genSingleTimestamp
+    result    <- Gen.const(InsightMetricState(uuid, key, state, timestamp))
+  } yield result
+
+  // Generate a set of InsightMetricStates
+  private val genInsightMetricState: Gen[Sized, Set[InsightMetricState]] =
+    Gen.setOfBounded(1, 10)(genSingleInsightMetricState)
+
   // A generator for available metric keys
   private val genAvailableMetrics: Gen[Sized, ClientMessage] =
-    Gen.setOfBounded[Sized, MetricKey[Any]](1, 10)(genKey).map(ClientMessage.AvailableMetrics.apply)
+    genMetricKeyWithId
+      .map(ClientMessage.AvailableMetrics.apply)
 
   // A generator for metrics responses
   private val genMetricsResponses: Gen[Sized, ClientMessage] =
-    Gen
-      .setOfBounded[Sized, (MetricKey[Any], MetricState[Any])](1, 10)(genSinglePair)
+    genInsightMetricState
       .map(ClientMessage.MetricsResponse.apply)
 
   // A generator for random Client Messages
