@@ -28,7 +28,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       |<title>Simple Server</title>
       |<body>
       |<p><a href="/metrics">Metrics</a></p>
-      |<p><a href="/insight/metrics">Insight Metrics: Get all keys</a></p>
+      |<p><a href="/insight/keys">Insight Metrics: Get all keys</a></p>
       |</body
       |</html>""".stripMargin
 
@@ -52,7 +52,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
   private lazy val insightGetMetricsRouter =
     Http.collectZIO[Request] { case req @ Method.POST -> !! / "insight" / "metrics" =>
       for {
-        request  <- req.body.asString.map(_.fromJson[ClientMessage.AvailableMetrics])
+        request  <- req.body.asString.map(_.fromJson[ClientMessage.MetricsSelection])
         response <- request match {
                       case Left(e)  =>
                         ZIO
@@ -62,7 +62,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
                           )
                       case Right(r) =>
                         ZIO
-                          .serviceWithZIO[InsightPublisher](_.getMetrics(r.keys))
+                          .serviceWithZIO[InsightPublisher](_.getMetrics(r.selection))
                           .map(_.toJson)
                           .map(Response.json)
                     }

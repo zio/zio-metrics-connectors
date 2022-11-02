@@ -2,6 +2,7 @@ package zio.metrics.connectors
 
 import zio._
 import zio.metrics._
+import zio.metrics.MetricPair.Untyped
 import zio.test._
 
 trait Generators {
@@ -48,7 +49,7 @@ trait Generators {
     (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.frequency(name), state)), state)
   }
 
-  val genGauge = for {
+  val genGauge: Gen[Any, (Untyped, MetricState.Gauge)] = for {
     name  <- nonEmptyString
     count <- genPosDouble
   } yield {
