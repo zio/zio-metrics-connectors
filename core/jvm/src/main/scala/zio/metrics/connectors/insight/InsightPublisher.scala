@@ -21,12 +21,9 @@ private[connectors] class InsightPublisher private (current: Ref[Map[UUID, Insig
    * Return metrics for the provided selection of metric keys.
    */
   def getMetrics(selection: Iterable[UUID])(implicit trace: Trace): UIO[ClientMessage.MetricsResponse] =
-    for {
-      filtered <- current.get.map(_.filter { case (key: UUID, _) =>
-                    selection.exists(key == _)
-                  })
-      result    = ClientMessage.MetricsResponse(filtered.values.toSet)
-    } yield result
+    ZIO.collectPar(selection)(s => current.get.map(_.get(s))).map { states =>
+      ClientMessage.MetricsResponse(states.collect { case Some(state) => state }.toSet)
+    }
 
   /**
    * Store metric key and state pairs.
