@@ -1,11 +1,11 @@
 package zio.metrics.connectors.insight
 
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 import zio.{Chunk, Duration}
 import zio.json._
 import zio.metrics._
+import zio.metrics.connectors.insight.ClientMessage.{InsightMetricState, MetricKeyWithId}
 import zio.metrics.connectors.insight.MetricsMessageImplicits._
 import zio.test._
 
@@ -51,7 +51,7 @@ object MetricsMessageSpec extends ZIOSpecDefault {
     }
 
   // A generator for MetricKeys
-  private val genKey: Gen[Sized, MetricKey[Any]] =
+  private val genKey: Gen[Any, MetricKey[Any]] =
     Gen.oneOf(genKeyCounter, genKeyGauge, genKeyFrequency, genKeyHistogram, genKeySummary)
 
   // A generator for Counter State
@@ -100,32 +100,53 @@ object MetricsMessageSpec extends ZIOSpecDefault {
   private val genMetricPairs: Gen[Sized, Set[(MetricKey[Any], MetricState[Any])]] =
     Gen.setOfBounded(1, 10)(genSinglePair)
 
-  // A generator for Client Connect messages
-  private val genConnect: Gen[Any, ClientMessage] = Gen.const(ClientMessage.Connect)
+  // Generate Timestamp, FIXME: Gen.instant does not work with scala.js
+  private val genSingleTimestamp: Gen[Any, Instant] = Gen.const(Instant.parse("2022-11-01T15:12:15.214Z"))
 
-  // A generator for Connected messages
-  private val genConnected: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Connected.apply)
+  // Generate single MetricKeyWithId
+  private val genSingleMetricKeyWithId: Gen[Any, MetricKeyWithId] = for {
+    key    <- genKey.map(_.asInstanceOf[MetricKey.Untyped])
+    uuid <- Gen.uuid // FIXME: Gen.const(java.util.UUID.nameUUIDFromBytes(key.toString.getBytes))
+    result <- Gen.const(MetricKeyWithId(uuid, key))
+  } yield result
 
-  // A generator for Disconnected messages
-  private val genDisconnect: Gen[Sized, ClientMessage] = genNonEmpty.map(ClientMessage.Disconnect.apply)
+  // Generate a set of MetricKeyWithId
+  private val genMetricKeyWithId: Gen[Sized, Set[MetricKeyWithId]] =
+    Gen.setOfBounded(1, 10)(genSingleMetricKeyWithId)
 
-  // A generator for Subscription removals
-  private val genRemoveSubscription: Gen[Sized, ClientMessage] =
-    genNonEmpty.zip(genNonEmpty).map { case (con, sub) => ClientMessage.RemoveSubscription(con, sub) }
+  // Generate single InsightMetricState
+  private val genSingleInsightMetricState: Gen[Any, InsightMetricState] = for {
+    key       <- genKey.map(_.asInstanceOf[MetricKey.Untyped])
+    state     <- key.keyType match {
+                   case kc if kc.isInstanceOf[MetricKeyType.Counter]   => genStateCounter
+                   case kg if kg.isInstanceOf[MetricKeyType.Gauge]     => genStateGauge
+                   case kf if kf.isInstanceOf[MetricKeyType.Frequency] => genStateFrequency
+                   case ks if ks.isInstanceOf[MetricKeyType.Summary]   => genStateSummary
+                   case kh if kh.isInstanceOf[MetricKeyType.Histogram] => genStateHistogram
+                   case _                                              => throw new RuntimeException("Boom")
+                 }
+    uuid <- Gen.uuid // FIXME: Gen.const(java.util.UUID.nameUUIDFromBytes(key.toString.getBytes))
+    timestamp <- genSingleTimestamp
+    result    <- Gen.const(InsightMetricState(uuid, key, state, timestamp))
+  } yield result
 
-  // A generator for available keys
-  private val genAvailableKeys: Gen[Sized, ClientMessage] =
-    Gen.setOfBounded[Sized, MetricKey[Any]](1, 10)(genKey).map(ClientMessage.AvailableMetrics.apply)
+  // Generate a set of InsightMetricStates
+  private val genInsightMetricState: Gen[Sized, Set[InsightMetricState]] =
+    Gen.setOfBounded(1, 10)(genSingleInsightMetricState)
 
-  // A generator for MetricsUpdates
-  private val genNotification: Gen[Sized, ClientMessage] =
-    genNonEmpty.zip(genNonEmpty).zip(genMetricPairs).map { case (cltId, subId, states) =>
-      ClientMessage.MetricsNotification(cltId, subId, Instant.now().truncatedTo(ChronoUnit.MILLIS), states)
-    }
+  // A generator for available metric keys
+  private val genAvailableMetrics: Gen[Sized, ClientMessage] =
+    genMetricKeyWithId
+      .map(ClientMessage.AvailableMetrics.apply)
+
+  // A generator for metrics responses
+  private val genMetricsResponses: Gen[Sized, ClientMessage] =
+    genInsightMetricState
+      .map(ClientMessage.MetricsResponse.apply)
 
   // A generator for random Client Messages
   private val genClientMsg: Gen[Sized, ClientMessage] =
-    Gen.oneOf(genConnect, genConnected, genDisconnect, genRemoveSubscription, genAvailableKeys, genNotification)
+    Gen.oneOf(genAvailableMetrics, genMetricsResponses)
 
   private val serdeMetricsLabel =
     test("the Metrics Labels should serialize to/from json correctly")(check(genLabel) { label =>
