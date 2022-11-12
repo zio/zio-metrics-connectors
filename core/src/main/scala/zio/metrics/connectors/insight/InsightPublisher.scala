@@ -5,7 +5,7 @@ import java.util.UUID
 import zio._
 import zio.metrics.connectors.insight.ClientMessage.{InsightMetricState, MetricKeyWithId}
 
-private[connectors] class InsightPublisher private (current: Ref[Map[UUID, InsightMetricState]]) {
+class InsightPublisher private (current: Ref[Map[UUID, InsightMetricState]]) {
 
   /**
    * Return all metric keys.
@@ -32,7 +32,7 @@ private[connectors] class InsightPublisher private (current: Ref[Map[UUID, Insig
     current.update(_ + next)
 }
 
-private[connectors] object InsightPublisher {
+object InsightPublisher {
   def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[UUID, InsightMetricState])
   } yield new InsightPublisher(current)
