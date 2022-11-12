@@ -31,14 +31,7 @@ concentrates on providing the backend connectivity to report the captured metric
 goal is to have the same instrumentation of the application for any selected backend. 
 
 # Documentation
-[ZIO Metrics Connectors Microsite](https://zio.github.io/zio-metrics-connectors/)
-
-# Contributing
-[Documentation for contributors](https://zio.github.io/zio-metrics-connectors/docs/about/about_contributing)
-
-## Code of Conduct
-
-See the [Code of Conduct](https://zio.github.io/zio-metrics-connectors/docs/about/about_coc)
+[ZIO Metrics Connectors Microsite](https://zio.dev/zio-metrics-connectors/)
 
 ## Support
 
@@ -57,4 +50,3 @@ Come chat with us on [![Badge-Discord]][Link-Discord].
 [Badge-CI]: https://github.com/zio/zio-metrics-connectors/workflows/CI/badge.svg
 [Stage]: https://img.shields.io/badge/Project%20Stage-Development-yellowgreen.svg
 [Stage-Page]: https://github.com/zio/zio/wiki/Project-Stages
-
