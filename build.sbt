@@ -3,7 +3,7 @@ import BuildHelper._
 inThisBuild(
   List(
     organization   := "dev.zio",
-    homepage       := Some(url("https://zio.github.io/zio.zmx/")),
+    homepage       := Some(url("https://zio.dev/zio-metrics-connectors/")),
     licenses       := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers     := List(
       Developer(
@@ -27,7 +27,10 @@ inThisBuild(
       "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     ),
     scmInfo        := Some(
-      ScmInfo(url("https://github.com/zio/zio.zmx/"), "scm:git:git@github.com:zio/zio.zmx.git"),
+      ScmInfo(
+        url("https://github.com/zio/zio-metrics-connectors/"),
+        "scm:git:git@github.com:zio/zio-metrics-connectors.git",
+      ),
     ),
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
   ),
@@ -60,19 +63,16 @@ lazy val core =
     .enablePlugins(BuildInfoPlugin)
 
 lazy val docs = project
-  .in(file("genDocs"))
+  .in(file("zio-metrics-connectors-docs"))
   .settings(
     commonSettings,
-    publish / skip                             := true,
-    moduleName                                 := "zio-metrics-connectors-docs",
+    publish / skip := true,
+    moduleName     := "zio-metrics-connectors-docs",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio"   % Version.zio,
       "io.d11"  %% "zhttp" % Version.zioHttp,
     ),
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core),
-    ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
-    cleanFiles += (ScalaUnidoc / unidoc / target).value,
   )
   .dependsOn(core)
-  .enablePlugins(MdocPlugin, ScalaUnidocPlugin)
+  .enablePlugins(WebsitePlugin)

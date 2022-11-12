@@ -1,5 +1,5 @@
 ---
-id: metrics_example
+id: instrumentation-examples
 title: Instrumentation Examples
 ---
 
@@ -11,7 +11,7 @@ import zio.metrics._
 The trait below is used in the ZMX sample application just to show how the individual aspects 
 can be configured and used. 
 
-Please refer to [StatsD](statsd.md) and [Prometheus](prometheus.md) to see how the captured 
+Please refer to [StatsD](statsd-client.md) and [Prometheus](prometheus-client.md) to see how the captured 
 metrics can be visualized in the supported back ends. 
 
 ```scala mdoc

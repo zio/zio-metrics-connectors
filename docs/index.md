@@ -1,6 +1,6 @@
 ---
-id: about_index
-title:  "About ZIO ZMX"
+id: index
+title: "Introduction to ZIO ZMX"
 ---
 
 # Monitoring, Metrics and Diagnostics for ZIO

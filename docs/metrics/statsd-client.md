@@ -1,5 +1,5 @@
 ---
-id: metrics_statsd
+id: statsd-client
 title: "StatsD Client"
 ---
 
@@ -195,5 +195,5 @@ sbt examples/run
 
 ### Datadog dashboard 
 
-![A simple Datadog Dashboard](/zio-zmx/img/ZIOZmx-Datadog.png)
+![A simple Datadog Dashboard](../img/ZIOZmx-Datadog.png)
 
