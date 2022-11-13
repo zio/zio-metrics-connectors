@@ -1,5 +1,5 @@
 ---
-id: overview_index
+id: getting-started
 title: "Getting Started"
 ---
 
@@ -20,8 +20,8 @@ on at the level of the runtime such as the activity of individual fibers.
 ZIO ZMX solves this problem. ZIO ZMX can be added to any application with only a few lines of code and provides 
 two types of insights:
 
- - **[Diagnostics](diagnostics.md)** — Diagnostics are pre-defined data on the behavior of the application as it is running provided directly by the ZIO runtime, such as the number of fibers in the application, distribution of fiber lifetimes, and breakdown of fiber reasons for termination.
- - **[Metrics](metrics.md)** — Metrics are used-defined data, such as the number of times a certain section of code was executed, that are tracked by ZIO ZMX and made available either directly or through third party metrics solutions such as Prometheus or StatsD.
+ - **Diagnostics** — Diagnostics are pre-defined data on the behavior of the application as it is running provided directly by the ZIO runtime, such as the number of fibers in the application, distribution of fiber lifetimes, and breakdown of fiber reasons for termination.
+ - **[Metrics](metrics/index.md)** — Metrics are used-defined data, such as the number of times a certain section of code was executed, that are tracked by ZIO ZMX and made available either directly or through third party metrics solutions such as Prometheus or StatsD.
 
 See the corresponding sections for more information on how to use each of these pieces of functionality.
 

@@ -1,11 +1,11 @@
 ---
-id: metrics_prometheus
+id: prometheus-client
 title: Prometheus Client
 ---
 
 In a normal prometheus setup we will find prometheus agents which query configured endpoints 
 at regular intervals. The endpoints are HTTP endpoints serving the current metric state in 
-an encoding defined by [prometheus ](https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format).
+an encoding defined by [prometheus](https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format).
 
 ZMX provides the Prometheus encoding for the captured metrics out of the box. To avoid enforcing 
 a particular HTTP implementation, an instrumented application needs to expose the encoded format 
@@ -75,7 +75,7 @@ mySummary_count 139.0 1623589839194
 ### Set 
 
 A set is represented by a set of prometheus counters, distinguished from each other with an 
-extra label as configured in the [aspect](index.md#sets). 
+extra label as configured in the aspect. 
 
 ```
 # TYPE mySet counter
@@ -143,7 +143,7 @@ private lazy val httpEffect = Http.collectM[Request] {
 }
 ```
 
-Now, using the HTTP server and the [instrumentation examples](example.md) we can create an effect 
+Now, using the HTTP server and the [instrumentation examples](instrumentation-examples.md) we can create an effect 
 that simply runs the sample effects with their instrumentation until the user presses any key. 
 
 ```scala
@@ -257,4 +257,4 @@ In the steps below the ZMX checkout directory will be referred to as `$ZMXDIR`.
 
 Here is a screenshot of the Grafana dashboard produced with the setup above. 
 
-![A simple Grafana Dashboard](/zio-zmx/img/ZIOZmx-Grafana.png)
+![A simple Grafana Dashboard](../img/ZIOZmx-Grafana.png)
