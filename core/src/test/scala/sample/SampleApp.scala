@@ -1,6 +1,6 @@
 package sample
 
-import zio.{durationInt, Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio._
 import zio.json._
 import zio.metrics.connectors.{insight, prometheus, statsd, MetricsConfig}
 import zio.metrics.connectors.insight.{ClientMessage, InsightPublisher}
@@ -76,7 +76,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
   private lazy val runHttp = (server.start *> ZIO.never).forkDaemon
 
-  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] = (for {
+  override def run: ZIO[Environment & ZIOAppArgs & Scope, Any, Any] = (for {
     f <- runHttp
     _ <- program
     _ <- f.join
