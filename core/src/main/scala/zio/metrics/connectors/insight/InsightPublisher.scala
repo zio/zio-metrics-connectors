@@ -5,7 +5,7 @@ import java.util.UUID
 import zio._
 import zio.metrics.connectors.insight.ClientMessage.{InsightMetricState, MetricKeyWithId}
 
-class InsightPublisher private (current: Ref[Map[UUID, InsightMetricState]]) {
+sealed abstract case class InsightPublisher private (private val current: Ref[Map[UUID, InsightMetricState]]) {
 
   /**
    * Return all metric keys.
@@ -28,12 +28,12 @@ class InsightPublisher private (current: Ref[Map[UUID, InsightMetricState]]) {
   /**
    * Store metric key and state pairs.
    */
-  def set(next: (UUID, InsightMetricState))(implicit trace: Trace): UIO[Unit] =
+  private[insight] def set(next: (UUID, InsightMetricState))(implicit trace: Trace): UIO[Unit] =
     current.update(_ + next)
 }
 
-object InsightPublisher {
-  def make: ZIO[Any, Nothing, InsightPublisher] = for {
+private[insight] object InsightPublisher {
+  private[insight] def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[UUID, InsightMetricState])
-  } yield new InsightPublisher(current)
+  } yield new InsightPublisher(current) {}
 }
