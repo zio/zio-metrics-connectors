@@ -26,7 +26,7 @@ object InsightPublisherSpec extends ZIOSpecDefault with Generators {
                      .clockWith(_.instant)
                      .map(now => New(MetricKey.counter("countMe"), MetricState.Counter(v), now))
         encoded <- InsightEncoder.encode(event)
-        _       <- ip.set(encoded)
+        _       <- ip.update(event)
         fromIp  <- ip.getMetrics(Seq(encoded._1))
       } yield assertTrue(fromIp.states.size == 1) &&
         assertTrue(
