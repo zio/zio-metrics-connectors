@@ -13,16 +13,9 @@ package object insight {
     )
 
   private def insightHandler(clt: InsightPublisher): Iterable[MetricEvent] => UIO[Unit] =
-    events => {
-
-      val evtFilter: MetricEvent => Boolean = {
-        case MetricEvent.Unchanged(_, _, _) => false
-        case _                              => true
-      }
-
+    events =>
       ZIO
-        .foreach(events.filter(evtFilter))(evt => InsightEncoder.encode(evt).flatMap(clt.set(_)))
+        .foreach(events)(clt.update)
         .unit
-    }
 
 }

@@ -1,4 +1,4 @@
-package zio.metrics.connectors
+package sample
 
 import zio._
 import zio.metrics._

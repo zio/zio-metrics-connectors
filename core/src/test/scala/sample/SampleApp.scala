@@ -1,19 +1,18 @@
-package zio.metrics.connectors
+package sample
 
 import zio._
 import zio.json._
-import zio.metrics.connectors.insight.ClientMessage
+import zio.metrics.connectors.{insight, prometheus, statsd, MetricsConfig}
+import zio.metrics.connectors.insight.{ClientMessage, InsightPublisher}
 import zio.metrics.connectors.insight.ClientMessage.encAvailableMetrics
-import zio.metrics.connectors.insight.InsightPublisher
-//import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
 
+//import zio.metrics.connectors.newrelic.NewRelicConfig
 import zhttp.html._
 import zhttp.http._
-import zhttp.service.EventLoopGroup
-import zhttp.service.Server
+import zhttp.service.{EventLoopGroup, Server}
 import zhttp.service.server.ServerChannelFactory
 
 object SampleApp extends ZIOAppDefault with InstrumentedSample {
@@ -27,7 +26,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
     """<html>
       |<title>Simple Server</title>
       |<body>
-      |<p><a href="/metrics">Metrics</a></p>
+      |<p><a href="/prometheus/metrics">Prometheus Metrics</a></p>
       |<p><a href="/insight/keys">Insight Metrics: Get all keys</a></p>
       |</body
       |</html>""".stripMargin
@@ -37,7 +36,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
   private lazy val prometheusRouter =
     Http
-      .collectZIO[Request] { case Method.GET -> !! / "metrics" =>
+      .collectZIO[Request] { case Method.GET -> !! / "prometheus" / "metrics" =>
         ZIO.serviceWithZIO[PrometheusPublisher](_.get.map(Response.text))
       }
 
@@ -101,7 +100,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       // NewRelicConfig.fromEnvEULayer,
       // newrelic.newRelicLayer,
 
-      // The inisght reporting layer
+      // The insight reporting layer
       insight.insightLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig

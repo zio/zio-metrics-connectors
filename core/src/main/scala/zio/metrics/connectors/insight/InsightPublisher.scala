@@ -3,9 +3,28 @@ package zio.metrics.connectors.insight
 import java.util.UUID
 
 import zio._
+import zio.metrics.connectors.MetricEvent
 import zio.metrics.connectors.insight.ClientMessage.{InsightMetricState, MetricKeyWithId}
 
-private[connectors] class InsightPublisher private (current: Ref[Map[UUID, InsightMetricState]]) {
+trait InsightPublisher {
+
+  /**
+   * Return all metric keys.
+   */
+  def getAllKeys(implicit trace: Trace): UIO[ClientMessage.AvailableMetrics]
+
+  /**
+   * Return metrics for the provided selection of metric keys.
+   */
+  def getMetrics(selection: Iterable[UUID])(implicit trace: Trace): UIO[ClientMessage.MetricsResponse]
+
+  /**
+   * Store metric key and state pairs.
+   */
+  def update(event: MetricEvent): ZIO[Any, Nothing, Unit]
+}
+
+private[insight] case class InsightPublisherImpl(current: Ref[Map[UUID, InsightMetricState]]) extends InsightPublisher {
 
   /**
    * Return all metric keys.
@@ -25,15 +44,18 @@ private[connectors] class InsightPublisher private (current: Ref[Map[UUID, Insig
       ClientMessage.MetricsResponse(states.collect { case Some(state) => state }.toSet)
     }
 
-  /**
-   * Store metric key and state pairs.
-   */
-  def set(next: (UUID, InsightMetricState))(implicit trace: Trace): UIO[Unit] =
-    current.update(_ + next)
+  def update(event: MetricEvent): ZIO[Any, Nothing, Unit] = event match {
+    case MetricEvent.Unchanged(_, _, _) => ZIO.unit
+    case _                              =>
+      InsightEncoder.encode(event).flatMap { case (uuid, state) =>
+        current.update(_.updated(uuid, state))
+      }
+  }
 }
 
-private[connectors] object InsightPublisher {
+private[insight] object InsightPublisher {
   def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[UUID, InsightMetricState])
-  } yield new InsightPublisher(current)
+  } yield InsightPublisherImpl(current)
+
 }
