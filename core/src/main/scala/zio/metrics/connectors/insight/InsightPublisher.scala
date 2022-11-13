@@ -5,7 +5,26 @@ import java.util.UUID
 import zio._
 import zio.metrics.connectors.insight.ClientMessage.{InsightMetricState, MetricKeyWithId}
 
-sealed abstract case class InsightPublisher private (private val current: Ref[Map[UUID, InsightMetricState]]) {
+trait InsightPublisher {
+
+  /**
+   * Return all metric keys.
+   */
+  def getAllKeys(implicit trace: Trace): UIO[ClientMessage.AvailableMetrics]
+
+  /**
+   * Return metrics for the provided selection of metric keys.
+   */
+  def getMetrics(selection: Iterable[UUID])(implicit trace: Trace): UIO[ClientMessage.MetricsResponse]
+
+  /**
+   * Store metric key and state pairs.
+   */
+  private[insight] def set(next: (UUID, InsightMetricState))(implicit trace: Trace): UIO[Unit]
+
+}
+
+private case class InsightPublisherImpl(current: Ref[Map[UUID, InsightMetricState]]) extends InsightPublisher {
 
   /**
    * Return all metric keys.
@@ -28,12 +47,12 @@ sealed abstract case class InsightPublisher private (private val current: Ref[Ma
   /**
    * Store metric key and state pairs.
    */
-  private[insight] def set(next: (UUID, InsightMetricState))(implicit trace: Trace): UIO[Unit] =
+  def set(next: (UUID, InsightMetricState))(implicit trace: Trace): UIO[Unit] =
     current.update(_ + next)
 }
 
 private[insight] object InsightPublisher {
-  private[insight] def make: ZIO[Any, Nothing, InsightPublisher] = for {
+  def make: ZIO[Any, Nothing, InsightPublisher] = for {
     current <- Ref.make(Map.empty[UUID, InsightMetricState])
-  } yield new InsightPublisher(current) {}
+  } yield InsightPublisherImpl(current)
 }
