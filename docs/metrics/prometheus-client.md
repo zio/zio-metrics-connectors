@@ -95,15 +95,12 @@ mySet{token="myKey-12"} 10.0 1623589839194
 ## Serving Prometheus metrics
 
 ```scala 
-import zhttp.http._
-import zhttp.service.Server
+import zio.http._
 
 import zio._
 import zio.console._
 import zio.zmx.MetricSnapshot.{ Json, Prometheus }
 import zio.zmx.prometheus.PrometheusClient
-import zhttp.service.server.ServerChannelFactory
-import zhttp.service.EventLoopGroup
 
 import zio.zmx.example.InstrumentedSample
 
@@ -149,7 +146,7 @@ that simply runs the sample effects with their instrumentation until the user pr
 ```scala
 private lazy val execute =
   (for {
-    s <- ((Server.port(8080) ++ Server.app(static +++ httpEffect)).start *> ZIO.never).forkDaemon
+    s <- (Server.install(static +++ httpEffect) *> ZIO.never).forkDaemon
     p <- instrumentedSample.program.fork
     _ <- putStrLn("Press Any Key to stop the demo server") *> getStrLn.catchAll(_ =>
             ZIO.none
@@ -161,9 +158,11 @@ Finally, within a `ZIO.App` we can override the run method, which is now simply 
 method with a Prometheus client provided in it´s environment:
 
 ```scala
-def run(args: List[String]): URIO[ZEnv, ExitCode] =
-  execute.provideCustomLayer(
-    PrometheusClient.live ++ ServerChannelFactory.auto ++ EventLoopGroup.auto(5)
+def run(args: List[String]): UIO[ExitCode] =
+  execute.provide(
+    PrometheusClient.live,
+    ServerConfig.default, 
+    Server.live,
   )
 ```
 

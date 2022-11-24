@@ -54,7 +54,7 @@ lazy val core =
         "dev.zio" %%% "zio"          % Version.zio,
         "dev.zio" %%% "zio-json"     % Version.zioJson,
         "dev.zio" %%% "zio-streams"  % Version.zio,
-        "io.d11"   %% "zhttp"        % Version.zioHttp,
+        "dev.zio"  %% "zio-http"     % Version.zioHttp,
         "dev.zio" %%% "zio-test"     % Version.zio % Test,
         "dev.zio" %%% "zio-test-sbt" % Version.zio % Test,
       ),
@@ -70,8 +70,8 @@ lazy val docs = project
     moduleName     := "zio-metrics-connectors-docs",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"   % Version.zio,
-      "io.d11"  %% "zhttp" % Version.zioHttp,
+      "dev.zio" %% "zio"      % Version.zio,
+      "dev.zio" %% "zio-http" % Version.zioHttp,
     ),
   )
   .dependsOn(core)
