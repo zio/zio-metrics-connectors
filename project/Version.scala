@@ -6,5 +6,5 @@ object Version {
 
   val zio     = "2.0.3"
   val zioJson = "0.3.0"
-  val zioHttp = "2.0.0-RC11"
+  val zioHttp = "0.0.3"
 }

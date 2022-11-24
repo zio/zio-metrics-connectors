@@ -1,6 +1,12 @@
 package sample
 
+import java.net.InetSocketAddress
+
 import zio._
+import zio.http._
+//import zio.metrics.connectors.newrelic.NewRelicConfig
+import zio.http.html._
+import zio.http.model.{Headers, Method, Status}
 import zio.json._
 import zio.metrics.connectors.{insight, prometheus, statsd, MetricsConfig}
 import zio.metrics.connectors.insight.{ClientMessage, InsightPublisher}
@@ -8,12 +14,6 @@ import zio.metrics.connectors.insight.ClientMessage.encAvailableMetrics
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
-
-//import zio.metrics.connectors.newrelic.NewRelicConfig
-import zhttp.html._
-import zhttp.http._
-import zhttp.service.{EventLoopGroup, Server}
-import zhttp.service.server.ServerChannelFactory
 
 object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
@@ -71,10 +71,13 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
   private def noCors(r: Response): Response =
     r.updateHeaders(_.combine(Headers(("Access-Control-Allow-Origin", "*"))))
 
-  private val server =
-    Server.port(bindPort) ++ Server.app(static ++ prometheusRouter ++ insightAllKeysRouter ++ insightGetMetricsRouter)
+  private val serverInstall =
+    Server.install(static ++ prometheusRouter ++ insightAllKeysRouter ++ insightGetMetricsRouter)
 
-  private lazy val runHttp = (server.start *> ZIO.never).forkDaemon
+  private lazy val runHttp = (serverInstall *> ZIO.never).forkDaemon
+
+  private lazy val serverConfig =
+    ZLayer.succeed(ServerConfig(address = new InetSocketAddress(bindPort), nThreads = nThreads))
 
   override def run: ZIO[Environment & ZIOAppArgs & Scope, Any, Any] = (for {
     f <- runHttp
@@ -82,8 +85,8 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
     _ <- f.join
   } yield ())
     .provide(
-      ServerChannelFactory.auto,
-      EventLoopGroup.auto(nThreads),
+      serverConfig,
+      Server.live,
 
       // This is the general config for all backends
       metricsConfig,
