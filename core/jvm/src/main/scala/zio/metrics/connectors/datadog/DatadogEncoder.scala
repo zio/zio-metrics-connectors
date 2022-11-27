@@ -12,12 +12,12 @@ case object DatadogEncoder {
   def encodeHistogramValues(
     key: MetricKey[MetricKeyType.Histogram],
     values: NonEmptyChunk[Double],
-  ): Task[Chunk[Byte]] = {
+  ): Chunk[Byte] = {
     val result = new StringBuilder(BUF_PER_METRIC)
 
     appendMetric(result, key.name, values, "d", key.tags)
 
-    ZIO.attempt(Chunk.fromArray(result.toString().getBytes()))
+    Chunk.fromArray(result.toString().getBytes())
   }
 
   private def appendMetric(

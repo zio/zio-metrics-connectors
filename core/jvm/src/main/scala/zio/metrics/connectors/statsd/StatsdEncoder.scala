@@ -88,7 +88,7 @@ case object StatsdEncoder {
       )
     }
 
-  private def appendMetric(
+  private[connectors] def appendMetric(
     buf: StringBuilder,
     name: String,
     value: Double,
