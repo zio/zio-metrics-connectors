@@ -1,18 +1,15 @@
 package sample
 
-import java.net.InetSocketAddress
-
 import zio._
 import zio.http._
+
+import java.net.InetSocketAddress
 //import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.http.html._
-import zio.http.model.{Headers, Method, Status}
-import zio.json._
-import zio.metrics.connectors.{insight, prometheus, statsd, MetricsConfig}
-import zio.metrics.connectors.insight.{ClientMessage, InsightPublisher}
-import zio.metrics.connectors.insight.ClientMessage.encAvailableMetrics
+import zio.http.model.{Headers, Method}
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
+import zio.metrics.connectors.{MetricsConfig, prometheus, statsd}
 import zio.metrics.jvm.DefaultJvmMetrics
 
 object SampleApp extends ZIOAppDefault with InstrumentedSample {
