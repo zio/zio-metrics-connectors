@@ -40,39 +40,11 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
         ZIO.serviceWithZIO[PrometheusPublisher](_.get.map(Response.text))
       }
 
-  private lazy val insightAllKeysRouter =
-    Http.collectZIO[Request] { case Method.GET -> !! / "insight" / "keys" =>
-      ZIO.serviceWithZIO[InsightPublisher](_.getAllKeys.map(_.toJson).map(data => noCors(Response.json(data))))
-    }
-
-  // POST: /insight/metrics body Seq[MetricKey] => Seq[MetricsNotification]
-  // TODO: Should we add an additional module with a layer implementation for zio-http?
-  // should be added (at some point) to zio-http ...
-  private lazy val insightGetMetricsRouter =
-    Http.collectZIO[Request] { case req @ Method.POST -> !! / "insight" / "metrics" =>
-      for {
-        request  <- req.body.asString.map(_.fromJson[ClientMessage.MetricsSelection])
-        response <- request match {
-                      case Left(e)  =>
-                        ZIO
-                          .debug(s"Failed to parse the input: $e")
-                          .as(
-                            Response.text(e).setStatus(Status.BadRequest),
-                          )
-                      case Right(r) =>
-                        ZIO
-                          .serviceWithZIO[InsightPublisher](_.getMetrics(r.selection))
-                          .map(_.toJson)
-                          .map(data => noCors(Response.json(data)))
-                    }
-      } yield response
-    }
-
   private def noCors(r: Response): Response =
     r.updateHeaders(_.combine(Headers(("Access-Control-Allow-Origin", "*"))))
 
   private val serverInstall =
-    Server.install(static ++ prometheusRouter ++ insightAllKeysRouter ++ insightGetMetricsRouter)
+    Server.install(static ++ prometheusRouter)
 
   private lazy val runHttp = (serverInstall *> ZIO.never).forkDaemon
 
@@ -102,9 +74,6 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       // The NewRelic reporting layer
       // NewRelicConfig.fromEnvEULayer,
       // newrelic.newRelicLayer,
-
-      // The insight reporting layer
-      insight.insightLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig
       // Do NOT forget the .unit for the JVM metrics layer
