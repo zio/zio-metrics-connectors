@@ -41,18 +41,18 @@ case object StatsdEncoder {
         current.asInstanceOf[MetricState.Counter].count - old.asInstanceOf[MetricState.Counter].count
     }
 
-    appendMetric(buf, event.metricKey.name, delta, "c", event.metricKey.tags)
+    appendMetric(buf, event.metricKey.name, NonEmptyChunk(delta), "c", event.metricKey.tags)
   }
 
   // For a gauge we report the current value to statsd
   private def appendGauge(buf: StringBuilder, key: MetricKey.Untyped, g: MetricState.Gauge): StringBuilder =
-    appendMetric(buf, key.name, g.value, "g", key.tags)
+    appendMetric(buf, key.name, NonEmptyChunk(g.value), "g", key.tags)
 
   // A Histogram is reported to statsd as a set of related gauges, distinguished by an additional label
   private def appendHistogram(buf: StringBuilder, key: MetricKey.Untyped, h: MetricState.Histogram): StringBuilder =
     h.buckets.foldLeft(buf) { case (cur, (boundary, count)) =>
       val bucket = if (boundary < Double.MaxValue) boundary.toString() else "Inf"
-      appendMetric(cur, key.name, count.doubleValue(), "g", key.tags, MetricLabel("le", bucket))
+      appendMetric(cur, key.name, NonEmptyChunk(count.doubleValue()), "g", key.tags, MetricLabel("le", bucket))
     }
 
   // A Summary is reported to statsd as a set of related gauges, distinguished by an additional label
@@ -65,7 +65,7 @@ case object StatsdEncoder {
           appendMetric(
             buf,
             key.name,
-            v,
+            NonEmptyChunk(v),
             "g",
             key.tags,
             MetricLabel("quantile", q.toString()),
@@ -81,7 +81,7 @@ case object StatsdEncoder {
       appendMetric(
         cur,
         key.name,
-        c.doubleValue(),
+        NonEmptyChunk(c.doubleValue()),
         "g",
         key.tags,
         MetricLabel("bucket", b),
@@ -91,7 +91,7 @@ case object StatsdEncoder {
   private[connectors] def appendMetric(
     buf: StringBuilder,
     name: String,
-    value: Double,
+    values: NonEmptyChunk[Double],
     metricType: String,
     tags: Set[MetricLabel],
     extraTags: MetricLabel*,
@@ -105,7 +105,12 @@ case object StatsdEncoder {
     val withMetric = withLF
       .append(name)
       .append(":")
-      .append(format.format(value))
+
+    buf.append(format.format(values.head))
+
+    values.tail.foreach(value => buf.append(",").append(format.format(value)))
+
+    buf
       .append("|")
       .append(metricType)
 
