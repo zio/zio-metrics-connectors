@@ -37,6 +37,7 @@ private[connectors] object StatsdClient {
     ZIO.fromAutoCloseable(ZIO.attempt {
       val channel = DatagramChannel.open()
       channel.connect(new InetSocketAddress(host, port))
+      channel.configureBlocking(false)
       channel
     })
 
