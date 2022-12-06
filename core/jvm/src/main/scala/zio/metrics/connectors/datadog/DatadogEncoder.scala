@@ -1,6 +1,5 @@
 package zio.metrics.connectors.datadog
 
-import java.text.DecimalFormat
 import zio._
 import zio.metrics._
 import zio.metrics.connectors.statsd.StatsdEncoder
@@ -13,7 +12,7 @@ case object DatadogEncoder {
     key: MetricKey[MetricKeyType.Histogram],
     values: NonEmptyChunk[Double],
   ): Chunk[Byte] = {
-    val result = new StringBuilder(BUF_PER_METRIC)
+    val result = new scala.collection.mutable.StringBuilder(BUF_PER_METRIC)
 
     StatsdEncoder.appendMetric(result, key.name, values, "d", key.tags)
 
