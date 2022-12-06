@@ -12,14 +12,17 @@ package object datadog {
   def statsdHandler(client: StatsdClient): Iterable[MetricEvent] => UIO[Unit] = events =>
     statsd.statsdHandler(client)(events.filter(_.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]))
 
-  lazy val datadogLayer: ZLayer[StatsdConfig & MetricsConfig, Nothing, Unit] =
+  lazy val datadogLayer: ZLayer[DatadogConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped(
       for {
-        clt     <- StatsdClient.make
-        queue    = RingBuffer.apply[(MetricKey[MetricKeyType.Histogram], Double)](1000)
+        config  <- ZIO.service[DatadogConfig]
+        clt     <- StatsdClient.make.provideSome[Scope](ZLayer.succeed(StatsdConfig(config.host, config.port)))
+        queue    = RingBuffer.apply[(MetricKey[MetricKeyType.Histogram], Double)](config.maxQueueSize)
         listener = new DataDogListener(clt, queue)
-        _       <- ZIO.acquireRelease(ZIO.succeed(MetricClient.addListener(listener)(Unsafe.unsafe)))(_ =>
-                     ZIO.succeed(MetricClient.removeListener(listener)(Unsafe.unsafe)),
+        _       <- Unsafe.unsafe(implicit unsafe =>
+                     ZIO.acquireRelease(ZIO.succeed(MetricClient.addListener(listener)))(_ =>
+                       ZIO.succeed(MetricClient.removeListener(listener)),
+                     ),
                    )
         _       <- DataDogEventProcessor.make(clt, queue)
         _       <- MetricsClient.make(statsdHandler(clt))

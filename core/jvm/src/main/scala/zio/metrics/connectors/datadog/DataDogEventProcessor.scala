@@ -10,18 +10,22 @@ object DataDogEventProcessor {
   def make(
     client: StatsdClient,
     queue: RingBuffer[(MetricKey[MetricKeyType.Histogram], Double)],
-  ): ZIO[Any, Nothing, Unit] =
-    ZIO
-      .attemptBlockingIO {
-        while (!queue.isEmpty()) {
-          val items  = queue.pollUpTo(100)
-          val values = items.groupMap(_._1)(_._2)
-          values.foreach { case (key, value) =>
-            val encoded = DatadogEncoder.encodeHistogramValues(key, NonEmptyChunk.fromChunk(value).get)
-            client.send(encoded)
+  ): ZIO[DatadogConfig, Nothing, Unit] =
+    ZIO.service[DatadogConfig].flatMap { config =>
+      ZIO
+        .attempt {
+          while (!queue.isEmpty()) {
+            val items  = queue.pollUpTo(config.maxBatchedMetrics)
+            val values = items.groupMap(_._1)(_._2)
+            values.foreach { case (key, value) =>
+              val encoded = DatadogEncoder.encodeHistogramValues(key, NonEmptyChunk.fromChunk(value).get)
+              client.send(encoded)
+            }
           }
         }
-      }
-      .schedule(Schedule.fixed(1.millis))
-      .ignoreLogged
+        .ignoreLogged
+        .schedule(Schedule.fixed(config.metricProcessingInterval))
+        .forkDaemon
+        .unit
+    }
 }
