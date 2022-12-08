@@ -44,4 +44,5 @@ Please refer to
 
 * [Metrics Reference](zmx-metric-reference.md) for more information on the metrics currently supported
 * [Prometheus Client](prometheus-client.md) to learn more about the mapping from ZMX to Prometheus
-* [StatsD Client](statsd-client.md) to learn more about the mapping from ZMX to Prometheus
+* [StatsD Client](statsd-client.md) to learn more about the mapping from ZMX to StatsD
+* [DataDog Client](datadog-client.md) to learn more about the mapping from ZMX to DataDog
