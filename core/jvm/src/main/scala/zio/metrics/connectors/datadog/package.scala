@@ -10,7 +10,7 @@ import zio.metrics.connectors.statsd.StatsdConfig
 package object datadog {
 
   def statsdHandler(client: StatsdClient): Iterable[MetricEvent] => UIO[Unit] = events =>
-    statsd.statsdHandler(client)(events.filter(_.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]))
+    statsd.statsdHandler(client)(events.filter(!_.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]))
 
   lazy val datadogLayer: ZLayer[DatadogConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped(
