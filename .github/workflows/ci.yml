@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: ['zio/series2.x', 'master']
+    branches: ["zio/series2.x", "master"]
   release:
     types:
       - published
@@ -14,15 +14,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['adopt@1.8', 'adopt@1.11']
-        scala: ['2.12.16', '2.13.8', '3.1.3']
+        java: ["adopt@1.8", "adopt@1.11"]
+        scala: ["2.12.17", "2.13.10", "3.2.1"]
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: olafurpg/setup-scala@v10
+      - uses: actions/checkout@v3
+      - uses: olafurpg/setup-scala@v13
         with:
           java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Lint code
         run: sbt check
       - name: compile all
@@ -35,10 +35,10 @@ jobs:
     needs: [build]
     if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
       - run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
