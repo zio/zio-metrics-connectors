@@ -3,6 +3,7 @@ package zio.metrics.connectors.datadog
 import zio._
 import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.metrics._
+import zio.metrics.connectors.datadog.DatadogEncoder
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
