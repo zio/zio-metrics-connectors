@@ -7,7 +7,6 @@ final case class DatadogConfig(
   host: String,
   port: Int,
   maxBatchedMetrics: Int = 10,
-  metricProcessingInterval: Duration = 100.millis,
   maxQueueSize: Int = 100000)
 
 object DatadogConfig {
