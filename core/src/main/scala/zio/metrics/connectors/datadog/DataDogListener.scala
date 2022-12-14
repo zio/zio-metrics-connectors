@@ -4,8 +4,7 @@ import zio.Unsafe
 import zio.internal.RingBuffer
 import zio.metrics.{MetricKey, MetricKeyType, MetricListener}
 
-class DataDogListener(queue: RingBuffer[(MetricKey[MetricKeyType.Histogram], Double)])
-    extends MetricListener {
+class DataDogListener(queue: RingBuffer[(MetricKey[MetricKeyType.Histogram], Double)]) extends MetricListener {
   def updateHistogram(key: MetricKey[MetricKeyType.Histogram], value: Double)(implicit unsafe: Unsafe): Unit = {
     val _ = queue.offer((key, value))
   }
