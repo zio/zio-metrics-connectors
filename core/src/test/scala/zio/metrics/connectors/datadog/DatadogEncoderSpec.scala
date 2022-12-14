@@ -10,11 +10,11 @@ import zio.test.TestAspect._
 
 object DatadogEncoderSpec extends ZIOSpecDefault {
 
-  override def spec = suite("The StatsdEncoder should")(
+  override def spec = suite("The Datadog encoder should")(
     sendHistogram,
   ) @@ timed @@ timeoutWarning(60.seconds)
 
-  private val sendHistogram = test("send counter updates") {
+  private val sendHistogram = test("send histogram updates") {
     val name     = "testHistogram"
     val tagName  = "testTag"
     val tagValue = "tagValue"
