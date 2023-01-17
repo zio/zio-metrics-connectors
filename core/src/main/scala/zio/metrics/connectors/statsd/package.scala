@@ -10,7 +10,7 @@ package object statsd {
       StatsdClient.make.flatMap(clt => MetricsClient.make(statsdHandler(clt))).unit,
     )
 
-  private def statsdHandler(clt: StatsdClient): Iterable[MetricEvent] => UIO[Unit] = events => {
+  private[connectors] def statsdHandler(clt: StatsdClient): Iterable[MetricEvent] => UIO[Unit] = events => {
     val evtFilter: MetricEvent => Boolean = {
       case MetricEvent.Unchanged(_, _, _) => false
       case _                              => true

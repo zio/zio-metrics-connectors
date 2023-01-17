@@ -14,7 +14,7 @@ trait StatsdClient {
   private[connectors] def send(chunk: Chunk[Byte]): Long
 }
 
-private[statsd] object StatsdClient {
+private[connectors] object StatsdClient {
 
   private class Live(channel: DatagramChannel) extends StatsdClient {
 
@@ -37,6 +37,7 @@ private[statsd] object StatsdClient {
     ZIO.fromAutoCloseable(ZIO.attempt {
       val channel = DatagramChannel.open()
       channel.connect(new InetSocketAddress(host, port))
+      channel.configureBlocking(false)
       channel
     })
 
