@@ -66,13 +66,17 @@ lazy val docs = project
   .in(file("zio-metrics-connectors-docs"))
   .settings(
     commonSettings,
-    publish / skip := true,
-    moduleName     := "zio-metrics-connectors-docs",
+    moduleName                                 := "zio-metrics-connectors-docs",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio"      % Version.zio,
       "dev.zio" %% "zio-http" % Version.zioHttp,
     ),
+    projectName                                := "ZIO Metrics Connectors",
+    mainModuleName                             := (core / moduleName).value,
+    projectStage                               := ProjectStage.Development,
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core),
+    docsPublishBranch                          := "series/2.x",
   )
   .dependsOn(core)
   .enablePlugins(WebsitePlugin)
