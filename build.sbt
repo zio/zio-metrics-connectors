@@ -39,7 +39,8 @@ inThisBuild(
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
-lazy val commonSettings = Seq()
+lazy val root =
+  project.in(file(".")).settings(publish / skip := true).aggregate(core, docs)
 
 lazy val core =
   project
@@ -65,7 +66,6 @@ lazy val core =
 lazy val docs = project
   .in(file("zio-metrics-connectors-docs"))
   .settings(
-    commonSettings,
     moduleName                                 := "zio-metrics-connectors-docs",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
@@ -76,7 +76,7 @@ lazy val docs = project
     mainModuleName                             := (core / moduleName).value,
     projectStage                               := ProjectStage.Development,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core),
-    docsPublishBranch                          := "series/2.x",
+    docsPublishBranch                          := "zio/series/2.x",
   )
   .dependsOn(core)
   .enablePlugins(WebsitePlugin)
