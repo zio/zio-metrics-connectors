@@ -1,9 +1,12 @@
 ---
 id: index
-title: "Introduction to ZIO ZMX"
+title: "Introduction to ZIO Metrics Connectors"
+sidebar_label: "ZIO Metrics Connectors"
 ---
 
-# Monitoring, Metrics and Diagnostics for ZIO
+ZIO Metrics Connectors provides integration between ZIO and industry-leading monitoring and observability systems.
+
+@PROJECT_BADGES@
 
 <pre>                                                                                                                                                        
     ┌─────────────────────┐           client -> server           ┌─────────────────────┐                   
@@ -29,7 +32,8 @@ title: "Introduction to ZIO ZMX"
  │    - Test (Just replys with a test message)   │                                                                        
  └───────────────────────────────────────────────┘                                             
 </pre>
-We want to give users the option to run a light weight server local to where their ZIO app is running that supports a few commands to aid monitoring and metrics of their application.
+
+We want to give users the option to run a lightweight server local to where their ZIO app is running that supports a few commands to aid monitoring and metrics of their application.
 
 ## Commands
 
@@ -52,4 +56,3 @@ Clients send commands to the server and wait for a response. Initially we are pl
 The protocol used to communicate between the client and server is a cut down version of the RESP protocol that Redis uses. For more information on this protocol please see the specification docs: [Redis Protocol specification – Redis](https://redis.io/topics/protocol)
 
 Choosing this protocol enables us to have something simple to implement without any external dependencies being introduced and thereby keeping the client and server lightweight. 
-
