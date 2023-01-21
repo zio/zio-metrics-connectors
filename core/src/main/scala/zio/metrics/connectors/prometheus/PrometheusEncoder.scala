@@ -43,7 +43,7 @@ case object PrometheusEncoder {
       val allLabels = key.tags ++ extraLabels
 
       if (allLabels.isEmpty) ""
-      else allLabels.map(l => l.key + "=\"" + l.value + "\"").mkString("{", ",", "} ")
+      else allLabels.map(l => l.key + "=\"" + l.value + "\"").mkString("{", ",", "}")
     }
 
     def encodeSamples(samples: SampleResult, suffix: String): Chunk[String] =
@@ -53,6 +53,8 @@ case object PrometheusEncoder {
       } ++ Chunk(
         s"${encodeName(key.name)}_sum${encodeLabels()} ${samples.sum} $encodeTimestamp".trim(),
         s"${encodeName(key.name)}_count${encodeLabels()} ${samples.count} $encodeTimestamp".trim(),
+        s"${encodeName(key.name)}_min${encodeLabels()} ${samples.min} $encodeTimestamp".trim(),
+        s"${encodeName(key.name)}_max${encodeLabels()} ${samples.max} $encodeTimestamp".trim(),
       )
 
     def encodeTimestamp = s"${timestamp.toEpochMilli()}"
@@ -61,6 +63,8 @@ case object PrometheusEncoder {
       SampleResult(
         count = h.count.doubleValue(),
         sum = h.sum,
+        min = h.min,
+        max = h.max,
         buckets = h.buckets
           .filter(_._1 != Double.MaxValue)
           .sortBy(_._1)
@@ -76,6 +80,8 @@ case object PrometheusEncoder {
       SampleResult(
         count = s.count.doubleValue(),
         sum = s.sum,
+        min = s.min,
+        max = s.max,
         buckets = s.quantiles.map(q =>
           Set(MetricLabel("quantile", q._1.toString), MetricLabel("error", s.error.toString)) -> q._2,
         ),
@@ -109,5 +115,7 @@ case object PrometheusEncoder {
   private case class SampleResult(
     count: Double,
     sum: Double,
+    min: Double,
+    max: Double,
     buckets: Chunk[(Set[MetricLabel], Option[Double])])
 }
