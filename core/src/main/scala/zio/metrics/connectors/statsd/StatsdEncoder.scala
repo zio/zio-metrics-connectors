@@ -108,7 +108,7 @@ case object StatsdEncoder {
 
     buf.append(format.format(values.head))
 
-    values.tail.foreach(value => buf.append(",").append(format.format(value)))
+    values.tail.foreach(value => buf.append(":").append(format.format(value)))
 
     buf
       .append("|")
