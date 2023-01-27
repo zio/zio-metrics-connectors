@@ -83,6 +83,26 @@ trait Generators {
     (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.histogram(name, boundaries), state)), state)
   }
 
+  def genSummary = for {
+    name      <- nonEmptyString
+    count     <- genPosLong
+    min       <- Gen.double
+    max       <- Gen.double.filter(_ >= min)
+    sum        = min + max
+    error     <- Gen.double(0, 0.1)
+    maxAge    <- Gen.finiteDuration
+    maxSize   <- Gen.int(1, 100)
+    quantiles <- Gen.chunkOfBounded(1, 10)(Gen.double(0, 1) zip Gen.option(genPosDouble))
+  } yield {
+    val state = MetricState.Summary(error, quantiles, count, min, max, sum)
+    (
+      Unsafe.unsafe(implicit u =>
+        MetricPair.make(MetricKey.summary(name, maxAge, maxSize, error, quantiles.map(_._1)), state),
+      ),
+      state,
+    )
+  }
+
   def unqiueNonEmptyString(ref: Ref[Set[String]]) =
     Gen(
       nonEmptyString.sample.filterZIO {

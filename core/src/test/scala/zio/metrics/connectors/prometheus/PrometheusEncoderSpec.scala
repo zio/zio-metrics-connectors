@@ -1,7 +1,6 @@
 package zio.metrics.connectors.prometheus
 
 import zio._
-import zio.metrics._
 import zio.metrics.connectors._
 import zio.metrics.connectors.MetricEvent._
 import zio.test._
@@ -11,45 +10,95 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
 
   override def spec = suite("The Prometheus encoding should")(
     encodeCounter,
-    // encodeHistogram
-  ) @@ timed @@ timeoutWarning(60.seconds) @@ parallel
+    encodeGauge,
+    encodeFrequency,
+    encodeSummary,
+    encodeHistogram,
+  ) @@ timed @@ timeoutWarning(60.seconds) @@ parallel @@ withLiveClock
 
-  private val encodeCounter = test("Encode a Counter")(check(genPosDouble) { v =>
+  private val encodeCounter = test("Encode a Counter")(check(genCounter) { case (pair, state) =>
     for {
-      event <- ZIO
-                 .clockWith(_.instant)
-                 .map(now => New(MetricKey.counter("countMe"), MetricState.Counter(v), now))
-      text  <- PrometheusEncoder.encode(event)
+      timestamp <- ZIO.clockWith(_.instant)
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
+      name       = pair.metricKey.name
     } yield assertTrue(
-      text.equals(
-        Chunk(
-          "# TYPE countMe counter",
-          "# HELP countMe Some help",
-          s"countMe $v ${event.timestamp.toEpochMilli()}",
-        ),
+      text == Chunk(
+        s"# TYPE $name counter",
+        s"# HELP $name Some help",
+        s"$name ${state.count} ${timestamp.toEpochMilli}",
       ),
     )
   })
 
-  // private val encodeHistogram = testM("Encode a Histogram")(check(genPosDouble) { v =>
-  //   val histogram = MetricKey
-  //     .Histogram("test", ZIOMetric.Histogram.Boundaries.linear(0.1, 1.0, 10), Chunk(MetricLabel("label", "x")))
+  private val encodeGauge = test("Encode a Gauge")(check(genGauge) { case (pair, state) =>
+    for {
+      timestamp <- ZIO.clockWith(_.instant)
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
+      name       = pair.metricKey.name
+    } yield assertTrue(
+      text == Chunk(
+        s"# TYPE $name gauge",
+        s"# HELP $name Some help",
+        s"$name ${state.value} ${timestamp.toEpochMilli}",
+      ),
+    )
+  })
 
-  //   val encoded = PrometheusEncoder.encode(MetricState.histogram(histogram), Instant.ofEpochMilli(0))
-  //   val lines   = encoded.split("\n")
+  private val encodeFrequency = test("Encode a Frequency")(check(genFrequency1) { case (pair, state) =>
+    for {
+      timestamp <- ZIO.clockWith(_.instant)
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
+      name       = pair.metricKey.name
+      expected   = Chunk.fromIterable(state.occurrences).flatMap { case (k, v) =>
+                     Chunk(
+                       s"# TYPE $name counter",
+                       s"# HELP $name Some help",
+                       s"""$name{bucket="$k"} ${v.toDouble} ${timestamp.toEpochMilli}""",
+                     )
+                   }
+    } yield assertTrue(text == expected)
+  })
 
-  //   assertTrue(
-  //     encoded.startsWith(
-  //       s"""# TYPE test histogram
-  //          |# HELP test Test histogram""".stripMargin
-  //     )
-  //   ) &&
-  //   assertTrue(encoded.endsWith(s"""test_sum{label="x"} $v 0
-  //                                  |test_count{label="x"} 1.0 0""".stripMargin)) &&
-  //   assertTrue(
-  //     (bounds :+ Double.MaxValue)
-  //       .map(d => if (d < Double.MaxValue) d.toString else "+Inf")
-  //       .forall(d => lines.exists(s => s.startsWith(s"""test_bucket{label="x",le="$d"}""")))
-  //   )
-  // })
+  private val encodeSummary = test("Encode a Summary")(check(genSummary) { case (pair, state) =>
+    for {
+      timestamp <- ZIO.clockWith(_.instant)
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
+      name       = pair.metricKey.name
+      epochMilli = timestamp.toEpochMilli
+    } yield assertTrue(
+      text == Chunk(
+        s"# TYPE $name summary",
+        s"# HELP $name Some help",
+      ) ++ state.quantiles.map { case (k, v) =>
+        s"""$name{quantile="$k",error="${state.error}"} ${v.getOrElse(Double.NaN)} $epochMilli"""
+      } ++ Chunk(
+        s"${name}_sum ${state.sum} $epochMilli",
+        s"${name}_count ${state.count.toDouble} $epochMilli",
+        s"${name}_min ${state.min} $epochMilli",
+        s"${name}_max ${state.max} $epochMilli",
+      ),
+    )
+  })
+
+  private val encodeHistogram = test("Encode a Histogram")(check(genHistogram) { case (pair, state) =>
+    for {
+      timestamp <- ZIO.clockWith(_.instant)
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
+      name       = pair.metricKey.name
+      epochMilli = timestamp.toEpochMilli
+    } yield assertTrue(
+      text == Chunk(
+        s"# TYPE $name histogram",
+        s"# HELP $name Some help",
+      ) ++ state.buckets.filter(_._1 < Double.MaxValue).map { case (k, v) =>
+        s"""${name}_bucket{le="$k"} ${v.toDouble} $epochMilli"""
+      } ++ Chunk(
+        s"""${name}_bucket{le="+Inf"} ${state.count.toDouble} $epochMilli""",
+        s"${name}_sum ${state.sum} $epochMilli",
+        s"${name}_count ${state.count.toDouble} $epochMilli",
+        s"${name}_min ${state.min} $epochMilli",
+        s"${name}_max ${state.max} $epochMilli",
+      ),
+    )
+  })
 }
