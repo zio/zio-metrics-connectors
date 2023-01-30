@@ -33,13 +33,12 @@ package object newrelic {
     }
 
     val send = ZIO
-      .foreach(events.filter(evtFilter))(evt =>
+      .foreachDiscard(events.filter(evtFilter))(evt =>
         for {
           encoded <- encoder.encode(evt).catchAll(_ => ZIO.succeed(Chunk.empty))
           _       <- ZIO.when(encoded.nonEmpty)(client.send(encoded))
         } yield (),
       )
-      .unit
 
     send
 

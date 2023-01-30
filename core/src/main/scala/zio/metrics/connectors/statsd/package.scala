@@ -17,13 +17,12 @@ package object statsd {
     }
 
     val send = ZIO
-      .foreach(events.filter(evtFilter))(evt =>
+      .foreachDiscard(events.filter(evtFilter))(evt =>
         for {
           encoded <- StatsdEncoder.encode(evt).catchAll(_ => ZIO.succeed(Chunk.empty))
           _       <- ZIO.when(encoded.nonEmpty)(ZIO.attempt(clt.send(encoded)))
         } yield (),
       )
-      .unit
 
     // TODO: Do we want to at least log a problem sending the metrics ?
     send.catchAll(_ => ZIO.unit)
