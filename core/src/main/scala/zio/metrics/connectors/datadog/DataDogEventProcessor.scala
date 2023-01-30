@@ -29,7 +29,7 @@ object DataDogEventProcessor {
                            }
                          }
                          .ignoreLogged
-                         .schedule(Schedule.fixed(metricsConfig.interval))
+                         .schedule(Schedule.fixed(datadogConfig.histogramSendInterval.getOrElse(metricsConfig.interval)))
                          .forkDaemon
                          .unit
     } yield ()
