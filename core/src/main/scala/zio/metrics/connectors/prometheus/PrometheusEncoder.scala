@@ -17,12 +17,48 @@ case object PrometheusEncoder {
     timestamp: Instant,
     descriptionKey: Option[String],
   ): Chunk[String] = {
+    val name = key.name.replaceAll("-", "_").trim
+
+    // The header required for all Prometheus metrics
+    val prometheusType = state match {
+      case _: MetricState.Counter   => "counter"
+      case _: MetricState.Gauge     => "gauge"
+      case _: MetricState.Histogram => "histogram"
+      case _: MetricState.Summary   => "summary"
+      case _: MetricState.Frequency => "counter"
+    }
+
+    val encodeHead = {
+      val description = descriptionKey.flatMap(d => key.tags.find(_.key == d)).fold("")(l => s" ${l.value}")
+      Chunk(
+        s"# TYPE $name $prometheusType",
+        s"# HELP $name$description",
+      )
+    }
+
+    val encodeTimestamp = s"${timestamp.toEpochMilli}"
+
+    def encodeLabels(allLabels: Set[MetricLabel]) =
+      if (allLabels.isEmpty) new StringBuilder("")
+      else
+        allLabels
+          .foldLeft(new StringBuilder(256).append("{")) { case (sb, l) =>
+            sb.append(l.key).append("=\"").append(l.value).append("\",")
+          }
+          .append("}")
+
+    val tagsWithoutDescription = descriptionKey.fold(key.tags)(d => key.tags.filter(_.key != d))
+
+    val baseLabels = encodeLabels(tagsWithoutDescription)
+
+    def encodeExtraLabels(extraLabels: Set[MetricLabel]) =
+      if (extraLabels.isEmpty) baseLabels else encodeLabels(tagsWithoutDescription ++ extraLabels)
 
     def encodeCounter(c: MetricState.Counter, extraLabels: MetricLabel*): String =
-      s"${encodeName(key.name)}${encodeLabels(extraLabels.toSet)} ${c.count} $encodeTimestamp"
+      s"$name${encodeExtraLabels(extraLabels.toSet)} ${c.count} $encodeTimestamp"
 
     def encodeGauge(g: MetricState.Gauge): String =
-      s"${encodeName(key.name)}${encodeLabels()} ${g.value} $encodeTimestamp"
+      s"$name$baseLabels ${g.value} $encodeTimestamp"
 
     def encodeHistogram(h: MetricState.Histogram): Chunk[String] =
       encodeSamples(sampleHistogram(h), suffix = "_bucket")
@@ -30,37 +66,25 @@ case object PrometheusEncoder {
     def encodeSummary(s: MetricState.Summary): Chunk[String] =
       encodeSamples(sampleSummary(s), suffix = "")
 
-    // The header required for all Prometheus metrics
-    def encodeHead: Chunk[String] = {
-      val description = descriptionKey.flatMap(d => key.tags.find(_.key == d)).fold("")(l => s" ${l.value}")
-      Chunk(
-        s"# TYPE ${encodeName(key.name)} $prometheusType",
-        s"# HELP ${encodeName(key.name)}$description",
-      )
-    }
-
-    def encodeName(s: String): String =
-      s.replaceAll("-", "_")
-
-    def encodeLabels(extraLabels: Set[MetricLabel] = Set.empty): String = {
-      val allLabels = descriptionKey.fold(key.tags)(d => key.tags.filter(_.key != d)) ++ extraLabels
-
-      if (allLabels.isEmpty) ""
-      else allLabels.map(l => l.key + "=\"" + l.value + "\"").mkString("{", ",", "}")
-    }
-
     def encodeSamples(samples: SampleResult, suffix: String): Chunk[String] =
-      samples.buckets.map { b =>
-        s"${encodeName(key.name)}$suffix${encodeLabels(b._1)} ${b._2.map(_.toString).getOrElse("NaN")} $encodeTimestamp"
-          .trim()
-      } ++ Chunk(
-        s"${encodeName(key.name)}_sum${encodeLabels()} ${samples.sum} $encodeTimestamp".trim(),
-        s"${encodeName(key.name)}_count${encodeLabels()} ${samples.count} $encodeTimestamp".trim(),
-        s"${encodeName(key.name)}_min${encodeLabels()} ${samples.min} $encodeTimestamp".trim(),
-        s"${encodeName(key.name)}_max${encodeLabels()} ${samples.max} $encodeTimestamp".trim(),
+      Chunk(
+        samples.buckets
+          .foldLeft(new StringBuilder(samples.buckets.size * 100)) { case (sb, (l, v)) =>
+            sb.append(name)
+              .append(suffix)
+              .append(encodeExtraLabels(l))
+              .append(" ")
+              .append(v.map(_.toString).getOrElse("NaN"))
+              .append(" ")
+              .append(encodeTimestamp)
+              .append("\n")
+          }
+          .toString,
+        s"${name}_sum$baseLabels ${samples.sum} $encodeTimestamp",
+        s"${name}_count$baseLabels ${samples.count} $encodeTimestamp",
+        s"${name}_min$baseLabels ${samples.min} $encodeTimestamp",
+        s"${name}_max$baseLabels ${samples.max} $encodeTimestamp",
       )
-
-    def encodeTimestamp = s"${timestamp.toEpochMilli()}"
 
     def sampleHistogram(h: MetricState.Histogram): SampleResult =
       SampleResult(
@@ -89,14 +113,6 @@ case object PrometheusEncoder {
           Set(MetricLabel("quantile", q._1.toString), MetricLabel("error", s.error.toString)) -> q._2,
         ),
       )
-
-    def prometheusType: String = state match {
-      case _: MetricState.Counter   => "counter"
-      case _: MetricState.Gauge     => "gauge"
-      case _: MetricState.Histogram => "histogram"
-      case _: MetricState.Summary   => "summary"
-      case _: MetricState.Frequency => "counter"
-    }
 
     def encodeDetails: Chunk[String] = state match {
       case c: MetricState.Counter   => Chunk(encodeCounter(c))
