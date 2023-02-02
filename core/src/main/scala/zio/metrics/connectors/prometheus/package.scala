@@ -14,13 +14,13 @@ package object prometheus {
 
   private def prometheusHandler(clt: PrometheusPublisher): Iterable[MetricEvent] => UIO[Unit] = events =>
     for {
-      reportComplete <- ZIO.foreach(events)(evt =>
-                          for {
-                            reportEvent <-
-                              PrometheusEncoder.encode(evt).map(_.mkString("\n")).catchAll(_ => ZIO.succeed(""))
-                          } yield reportEvent,
-                        )
-      _              <- clt.set(reportComplete.mkString("\n"))
+      old            <- clt.get
+      reportComplete <- ZIO.foreach(Chunk.fromIterable(events)) { e =>
+                          PrometheusEncoder.encode(e).catchAll { t =>
+                            ZIO.succeed(Chunk.empty)
+                          }
+                        }
+      _              <- clt.set(reportComplete.flatten.addString(new StringBuilder(old.length), "\n").toString())
     } yield ()
 
 }

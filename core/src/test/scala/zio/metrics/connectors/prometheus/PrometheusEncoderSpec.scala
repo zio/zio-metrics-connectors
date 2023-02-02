@@ -53,7 +53,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
                      Chunk(
                        s"# TYPE $name counter",
                        s"# HELP $name Some help",
-                       s"""$name{bucket="$k"} ${v.toDouble} ${timestamp.toEpochMilli}""",
+                       s"""$name{bucket="$k",} ${v.toDouble} ${timestamp.toEpochMilli}""",
                      )
                    }
     } yield assertTrue(text == expected)
@@ -69,9 +69,9 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
       text == Chunk(
         s"# TYPE $name summary",
         s"# HELP $name Some help",
-      ) ++ state.quantiles.map { case (k, v) =>
-        s"""$name{quantile="$k",error="${state.error}"} ${v.getOrElse(Double.NaN)} $epochMilli"""
-      } ++ Chunk(
+      ) ++ Chunk(state.quantiles.map { case (k, v) =>
+        s"""$name{quantile="$k",error="${state.error}",} ${v.getOrElse(Double.NaN)} $epochMilli\n"""
+      }.mkString) ++ Chunk(
         s"${name}_sum ${state.sum} $epochMilli",
         s"${name}_count ${state.count.toDouble} $epochMilli",
         s"${name}_min ${state.min} $epochMilli",
@@ -90,10 +90,14 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
       text == Chunk(
         s"# TYPE $name histogram",
         s"# HELP $name Some help",
-      ) ++ state.buckets.filter(_._1 < Double.MaxValue).map { case (k, v) =>
-        s"""${name}_bucket{le="$k"} ${v.toDouble} $epochMilli"""
-      } ++ Chunk(
-        s"""${name}_bucket{le="+Inf"} ${state.count.toDouble} $epochMilli""",
+      ) ++ Chunk(
+        (state.buckets
+          .filter(_._1 < Double.MaxValue)
+          .map { case (k, v) =>
+            s"""${name}_bucket{le="$k",} ${v.toDouble} $epochMilli\n"""
+          }
+          ++ s"""${name}_bucket{le="+Inf",} ${state.count.toDouble} $epochMilli\n""").mkString,
+      ) ++ Chunk(
         s"${name}_sum ${state.sum} $epochMilli",
         s"${name}_count ${state.count.toDouble} $epochMilli",
         s"${name}_min ${state.min} $epochMilli",
