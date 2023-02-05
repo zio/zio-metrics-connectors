@@ -1,4 +1,4 @@
-package sample
+package zio.sample
 
 import zio._
 import zio.metrics._
@@ -6,7 +6,7 @@ import zio.metrics._
 trait InstrumentedSample {
 
   // Create a gauge, it can be applied to effects yielding a Double
-  val aspGauge1 = Metric.gauge("gauge1")
+  val aspGauge1 = Metric.gauge("gauge1").tagged("description", "Sample gauge1")
 
   val aspGauge2 = Metric.gauge("gauge2")
 

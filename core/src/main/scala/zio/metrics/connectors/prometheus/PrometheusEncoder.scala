@@ -8,13 +8,14 @@ import zio.metrics.connectors._
 
 case object PrometheusEncoder {
 
-  def encode(event: MetricEvent): ZIO[Any, Throwable, Chunk[String]] =
-    ZIO.attempt(encodeMetric(event.metricKey, event.current, event.timestamp))
+  def encode(event: MetricEvent, descriptionKey: Option[String] = None): ZIO[Any, Throwable, Chunk[String]] =
+    ZIO.attempt(encodeMetric(event.metricKey, event.current, event.timestamp, descriptionKey))
 
   private def encodeMetric(
     key: MetricKey.Untyped,
     state: MetricState.Untyped,
     timestamp: Instant,
+    descriptionKey: Option[String],
   ): Chunk[String] = {
 
     def encodeCounter(c: MetricState.Counter, extraLabels: MetricLabel*): String =
@@ -30,17 +31,19 @@ case object PrometheusEncoder {
       encodeSamples(sampleSummary(s), suffix = "")
 
     // The header required for all Prometheus metrics
-    def encodeHead: Chunk[String] = Chunk(
-      s"# TYPE ${encodeName(key.name)} $prometheusType",
-      s"# HELP ${encodeName(key.name)} Some help",
-    )
+    def encodeHead: Chunk[String] = {
+      val description = descriptionKey.flatMap(d => key.tags.find(_.key == d)).fold("")(l => s" ${l.value}")
+      Chunk(
+        s"# TYPE ${encodeName(key.name)} $prometheusType",
+        s"# HELP ${encodeName(key.name)}$description",
+      )
+    }
 
     def encodeName(s: String): String =
       s.replaceAll("-", "_")
 
     def encodeLabels(extraLabels: Set[MetricLabel] = Set.empty): String = {
-
-      val allLabels = key.tags ++ extraLabels
+      val allLabels = descriptionKey.fold(key.tags)(d => key.tags.filter(_.key != d)) ++ extraLabels
 
       if (allLabels.isEmpty) ""
       else allLabels.map(l => l.key + "=\"" + l.value + "\"").mkString("{", ",", "}")
