@@ -1,4 +1,4 @@
-package sample
+package zio.sample
 
 import java.net.InetSocketAddress
 
