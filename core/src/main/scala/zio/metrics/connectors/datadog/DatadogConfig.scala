@@ -1,11 +1,28 @@
 package zio.metrics.connectors.datadog
 
-import zio._
+import java.time.Duration
+
 import zio.{ULayer, ZLayer}
 
+/**
+ * Datadog Specific configuration
+ * @param host
+ *  Agent host name
+ * @param port
+ *  Agent port
+ * @param histogramSendInterval
+ *  Override for when the distributions should be sent faster than the general metrics frequency.
+ *  This is typically with an app that generates lots of distributions, but doesn't want to send other metrics
+ *  types, such as gauges, too frequently
+ * @param maxBatchedMetrics
+ *  The maximum number of metrics to batch before sending. This affects packet size
+ * @param maxQueueSize
+ *  The maximum number of metrics stored in the queue. This affects memory usage
+ */
 final case class DatadogConfig(
   host: String,
   port: Int,
+  histogramSendInterval: Option[Duration] = None,
   maxBatchedMetrics: Int = 10,
   maxQueueSize: Int = 100000)
 
@@ -15,6 +32,7 @@ object DatadogConfig {
     DatadogConfig(
       host = "localhost",
       port = 8125,
+      histogramSendInterval = None,
     )
 
   val defaultLayer: ULayer[DatadogConfig] = ZLayer.succeed(default)
