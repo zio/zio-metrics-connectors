@@ -23,7 +23,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
   private def labelString(key: MetricKey.Untyped, extra: (String, String)*) = {
     val tags = key.tags.filter(_.key != descriptionKey) ++ extra.map(x => MetricLabel(x._1, x._2)).toSet
     if (tags.isEmpty) ""
-    else tags.map(l => s"""${l.key}="${l.value}"""").mkString("{", ",", "}")
+    else tags.toList.map(l => s"""${l.key}="${l.value}",""").mkString("{", "", "}")
   }
 
   private val encodeCounter = test("Encode a Counter")(check(genCounter) { case (pair, state) =>
@@ -87,10 +87,10 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
       text == Chunk(
         s"# TYPE $name summary",
         s"# HELP $name$help",
-      ) ++ state.quantiles.map { case (k, v) =>
+      ) ++ Chunk(state.quantiles.map { case (k, v) =>
         val labelsWithExtra = labelString(pair.metricKey, "quantile" -> k.toString, "error" -> state.error.toString)
-        s"""$name$labelsWithExtra ${v.getOrElse(Double.NaN)} $epochMilli"""
-      } ++ Chunk(
+        s"""$name$labelsWithExtra ${v.getOrElse(Double.NaN)} $epochMilli\n"""
+      }.mkString) ++ Chunk(
         s"${name}_sum$labels ${state.sum} $epochMilli",
         s"${name}_count$labels ${state.count.toDouble} $epochMilli",
         s"${name}_min$labels ${state.min} $epochMilli",
@@ -112,11 +112,15 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
       text == Chunk(
         s"# TYPE $name histogram",
         s"# HELP $name$help",
-      ) ++ state.buckets.filter(_._1 < Double.MaxValue).map { case (k, v) =>
-        val labelsWithExtra = labelString(pair.metricKey, "le" -> k.toString)
-        s"""${name}_bucket$labelsWithExtra ${v.toDouble} $epochMilli"""
-      } ++ Chunk(
-        s"""${name}_bucket$labelsWithInf ${state.count.toDouble} $epochMilli""",
+      ) ++ Chunk(
+        (state.buckets
+          .filter(_._1 < Double.MaxValue)
+          .map { case (k, v) =>
+            val labelsWithExtra = labelString(pair.metricKey, "le" -> k.toString)
+            s"""${name}_bucket$labelsWithExtra ${v.toDouble} $epochMilli\n"""
+          }
+          ++ s"""${name}_bucket$labelsWithInf ${state.count.toDouble} $epochMilli\n""").mkString,
+      ) ++ Chunk(
         s"${name}_sum$labels ${state.sum} $epochMilli",
         s"${name}_count$labels ${state.count.toDouble} $epochMilli",
         s"${name}_min$labels ${state.min} $epochMilli",
