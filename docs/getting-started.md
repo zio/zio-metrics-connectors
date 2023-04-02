@@ -34,7 +34,7 @@ Include ZIO ZMX in your project by adding the following to your `build.sbt`:
 println(s"""```""")
 if (zio.metrics.connectors.BuildInfo.isSnapshot)
   println(s"""resolvers += Resolver.sonatypeRepo("snapshots")""")
-println(s"""libraryDependencies += "dev.zio" %% "zio-zmx" % "${zio.metrics.connectors.BuildInfo.version}"""")
+println(s"""libraryDependencies += "dev.zio" %% "zio-metrics-connectors" % "${zio.metrics.connectors.BuildInfo.version}"""")
 println(s"""```""")
 
 ```
