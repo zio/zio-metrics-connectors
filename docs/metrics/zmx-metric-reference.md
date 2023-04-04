@@ -23,7 +23,7 @@ In cases where the output type of an effect is not compatible with the type requ
 metric, the API defines a `xxxxWith` method to construct a `MetricAspect[A]` with a mapper function 
 from `A` to the type required by the metric.
 
-The API functions in this document are implemented in the `MetricAspect` object. An effect can be applied to 
+The API functions in this document are implemented in the `MetricAspect` object. An aspect can be applied to 
 an effect with the `@@` operator. 
 
 Once an application is instrumented with ZMX aspects, it can be configured with a client implementation 
