@@ -15,7 +15,7 @@ Also `MetricAspect`s are further qualified by a type parameter `A` that must be 
 output type of the effect. Practically this means that a `MetricAspect[Any]` can be applied to 
 any effect while a `MetricAspect[Double]` can only be applied to effects producing a `Double`.
 
-Finally, each metric understands a certain data type it can observe to manipulate it´s state. 
+Finally, each metric understands a certain data type it can observe to manipulate its state. 
 Counters, Gauges, Histograms and Summaries all understand `Double` values while a Set understands 
 `String` values. 
 
@@ -115,13 +115,13 @@ Given the effect produces `v: A` the gauge will be set to `f(v)` upon successful
 def setGaugeWith[A](name: String, tags: Label*)(f: A => Double): MetricAspect[A]
 ```
 
-Create a gauge that can be set relative to it´s previous value. It can be applied to effects yielding a Double.
+Create a gauge that can be set relative to its previous value. It can be applied to effects yielding a Double.
 
 ```scala
 def adjustGauge(name: String, tags: Label*): MetricAspect[Double]
 ```
 
-Create a gauge that can be set relative to it´s previous value. It can be applied to effects producing a value of type `A`. 
+Create a gauge that can be set relative to its previous value. It can be applied to effects producing a value of type `A`. 
 Given the effect produces `v: A` the gauge will be modified by `_ + f(v)` upon successful execution of the effect.
 
 ```scala
@@ -270,7 +270,7 @@ val summary = nextIntBetween(100, 500) @@ aspSummary
 ## Sets
 
 Sets are used to count the occurrences of distinct string values. For example an application that uses 
-logical names for it´s services, the number of invocations for each service can be tracked. 
+logical names for its services, the number of invocations for each service can be tracked. 
 
 Essentially, a set is a set of related counters sharing the same name and tags. The counters are set 
 apart from each other by an additional configurable tag. The values of the tag represent the observed 
