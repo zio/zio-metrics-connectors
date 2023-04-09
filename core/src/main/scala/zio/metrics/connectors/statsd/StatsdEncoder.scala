@@ -11,11 +11,11 @@ case object StatsdEncoder {
   private val BUF_PER_METRIC = 128
 
   def encode(event: MetricEvent): Task[Chunk[Byte]] =
-    ZIO.attempt(encodeEvent(event))
+    ZIO.attempt(Chunk.fromArray(encodeEvent(event).toString().getBytes()))
 
   def encodeEvent(
     event: MetricEvent,
-  ): Chunk[Byte] = {
+  ): StringBuilder = {
 
     val result = new StringBuilder(BUF_PER_METRIC)
 
@@ -27,7 +27,7 @@ case object StatsdEncoder {
       case f: MetricState.Frequency => appendFrequency(result, event.metricKey, f)
     }
 
-    Chunk.fromArray(result.toString().getBytes())
+    result
   }
 
   // TODO: We need to determine the delta for the counter since we have last reported it
