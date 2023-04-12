@@ -2,9 +2,9 @@ package zio.metrics.connectors
 
 import zio._
 import zio.internal.RingBuffer
+import zio.metrics.{MetricClient, MetricKey, MetricKeyType}
 import zio.metrics.connectors.internal.MetricsClient
 import zio.metrics.connectors.statsd.{StatsdClient, StatsdConfig}
-import zio.metrics.{MetricClient, MetricKey, MetricKeyType}
 
 package object datadog {
 
@@ -25,10 +25,13 @@ package object datadog {
       } yield (),
     )
 
-  private[connectors] def datadogHandler(client: StatsdClient, config: DatadogConfig): Iterable[MetricEvent] => UIO[Unit] = events => {
+  private[connectors] def datadogHandler(
+    client: StatsdClient,
+    config: DatadogConfig,
+  ): Iterable[MetricEvent] => UIO[Unit] = events => {
     val evtFilter: MetricEvent => Boolean = {
       case MetricEvent.Unchanged(_, _, _) => false
-      case _ => true
+      case _                              => true
     }
 
     val encoder = DatadogEncoder.encoder(config)
@@ -37,7 +40,7 @@ package object datadog {
       .foreachDiscard(events.filter(evtFilter))(evt =>
         for {
           encoded <- encoder(evt).catchAll(_ => ZIO.succeed(Chunk.empty))
-          _ <- ZIO.when(encoded.nonEmpty)(ZIO.attempt(client.send(encoded)))
+          _       <- ZIO.when(encoded.nonEmpty)(ZIO.attempt(client.send(encoded)))
         } yield (),
       )
 

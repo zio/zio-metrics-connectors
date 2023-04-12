@@ -1,14 +1,14 @@
 package zio.metrics.connectors.datadog
 
+import java.time.Instant
+
 import zio._
-import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.metrics._
+import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.metrics.connectors.MetricEvent
+import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
-import zio.test._
-
-import java.time.Instant
 
 object DatadogEncoderSpec extends ZIOSpecDefault {
 
@@ -16,7 +16,7 @@ object DatadogEncoderSpec extends ZIOSpecDefault {
     sendHistogram,
     sendHistograms,
     encodeContainerId,
-    encodeHistogramWithContainerId
+    encodeHistogramWithContainerId,
   ) @@ timed @@ timeoutWarning(60.seconds)
 
   private val sendHistogram = test("send histogram update") {
@@ -46,7 +46,7 @@ object DatadogEncoderSpec extends ZIOSpecDefault {
     val event       = MetricEvent.New(MetricKey.gauge(name), MetricState.Gauge(1), Instant.now())
     for {
       encoded <- encoder(event)
-      s       = new String(encoded.toArray)
+      s        = new String(encoded.toArray)
     } yield assert(s)(equalTo(s"$name:1|g|c:$containerId"))
   }
 
