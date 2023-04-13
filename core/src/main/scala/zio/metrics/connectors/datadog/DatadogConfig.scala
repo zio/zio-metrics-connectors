@@ -18,13 +18,16 @@ import zio.{ULayer, ZLayer}
  *  The maximum number of metrics to batch before sending. This affects packet size
  * @param maxQueueSize
  *  The maximum number of metrics stored in the queue. This affects memory usage
+ * @param containerId
+ *  An optional docker container ID
  */
 final case class DatadogConfig(
   host: String,
   port: Int,
   histogramSendInterval: Option[Duration] = None,
   maxBatchedMetrics: Int = 10,
-  maxQueueSize: Int = 100000)
+  maxQueueSize: Int = 100000,
+  containerId: Option[String] = None)
 
 object DatadogConfig {
 

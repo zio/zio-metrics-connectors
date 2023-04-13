@@ -17,13 +17,14 @@ object DataDogEventProcessor {
     for {
       datadogConfig <- ZIO.service[DatadogConfig]
       metricsConfig <- ZIO.service[MetricsConfig]
+      encoder        = DatadogEncoder.histogramEncoder(datadogConfig)
       _             <- ZIO
                          .attempt {
                            while (!queue.isEmpty()) {
                              val items  = queue.pollUpTo(datadogConfig.maxBatchedMetrics)
                              val values = groupMap(items)(_._1)(_._2)
                              values.foreach { case (key, value) =>
-                               val encoded = DatadogEncoder.encodeHistogramValues(key, NonEmptyChunk.fromChunk(value).get)
+                               val encoded = encoder(key, NonEmptyChunk.fromChunk(value).get)
                                client.send(encoded)
                              }
                            }

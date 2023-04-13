@@ -1,16 +1,12 @@
 package zio.metrics.connectors
 
-import zio.{metrics, _}
+import zio._
 import zio.internal.RingBuffer
 import zio.metrics.{MetricClient, MetricKey, MetricKeyType}
 import zio.metrics.connectors.internal.MetricsClient
-import zio.metrics.connectors.statsd.StatsdClient
-import zio.metrics.connectors.statsd.StatsdConfig
+import zio.metrics.connectors.statsd.{StatsdClient, StatsdConfig}
 
 package object datadog {
-
-  def statsdHandler(client: StatsdClient): Iterable[MetricEvent] => UIO[Unit] = events =>
-    statsd.statsdHandler(client)(events.filter(!_.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]))
 
   lazy val datadogLayer: ZLayer[DatadogConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped(
@@ -25,7 +21,30 @@ package object datadog {
                      ),
                    )
         _       <- DataDogEventProcessor.make(clt, queue)
-        _       <- MetricsClient.make(statsdHandler(clt))
+        _       <- MetricsClient.make(datadogHandler(clt, config))
       } yield (),
     )
+
+  private[connectors] def datadogHandler(
+    client: StatsdClient,
+    config: DatadogConfig,
+  ): Iterable[MetricEvent] => UIO[Unit] = events => {
+    val evtFilter: MetricEvent => Boolean = {
+      case MetricEvent.Unchanged(_, _, _) => false
+      case _                              => true
+    }
+
+    val encoder = DatadogEncoder.encoder(config)
+
+    val send = ZIO
+      .foreachDiscard(events.filter(evtFilter))(evt =>
+        for {
+          encoded <- encoder(evt).catchAll(_ => ZIO.succeed(Chunk.empty))
+          _       <- ZIO.when(encoded.nonEmpty)(ZIO.attempt(client.send(encoded)))
+        } yield (),
+      )
+
+    send.ignore
+  }
+
 }
