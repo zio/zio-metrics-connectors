@@ -14,7 +14,7 @@ case object DatadogEncoder {
     val withContainerId = config.containerId match {
       case Some(cid) =>
         val s = cidString(cid)
-        event: MetricEvent => base(event).append(s)
+        (event: MetricEvent) => base(event).append(s)
       case None      =>
         base
     }
