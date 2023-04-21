@@ -21,11 +21,17 @@ package object prometheus {
       for {
         old            <- clt.get
         reportComplete <- ZIO.foreach(Chunk.fromIterable(events)) { e =>
-                            PrometheusEncoder.encode(e, descriptionKey = Some(config.descriptionKey)).catchAll { t =>
+                            PrometheusEncoder.encode(e, descriptionKey = Some(config.descriptionKey)).catchAll { _ =>
                               ZIO.succeed(Chunk.empty)
                             }
                           }
-        _              <- clt.set(reportComplete.flatten.addString(new StringBuilder(old.length), "\n").toString())
+        groupedReport <- ZIO.succeed(groupMetricByType(reportComplete))
+        _              <- clt.set(groupedReport.flatten.addString(new StringBuilder(old.length), "\n").toString())
       } yield ()
 
+  def groupMetricByType(report: Chunk[Chunk[String]]): Chunk[Chunk[String]] = {
+    Chunk.fromIterable(report.groupMap(thm => thm.take(2))(thm => thm.drop(2)).map {
+      case (th, m) => th.appendedAll(m.flatten)
+    })
+  }
 }
