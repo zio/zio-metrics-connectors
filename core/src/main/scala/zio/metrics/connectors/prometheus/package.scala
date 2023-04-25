@@ -25,13 +25,12 @@ package object prometheus {
                               ZIO.succeed(Chunk.empty)
                             }
                           }
-        groupedReport <- ZIO.succeed(groupMetricByType(reportComplete))
+        groupedReport  <- ZIO.succeed(groupMetricByType(reportComplete))
         _              <- clt.set(groupedReport.flatten.addString(new StringBuilder(old.length), "\n").toString())
       } yield ()
 
-  def groupMetricByType(report: Chunk[Chunk[String]]): Chunk[Chunk[String]] = {
-    Chunk.fromIterable(report.groupMap(thm => thm.take(2))(thm => thm.drop(2)).map {
-      case (th, m) => th.appendedAll(m.flatten)
+  def groupMetricByType(report: Chunk[Chunk[String]]): Chunk[Chunk[String]] =
+    Chunk.fromIterable(report.groupMap(thm => thm.take(2))(thm => thm.drop(2)).map { case (th, m) =>
+      th.appendedAll(m.flatten)
     })
-  }
 }
