@@ -46,14 +46,14 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
     test("not group metrics of different types") {
       val encodedMetric = Chunk(
         Chunk(
-          "# TYPE jvm_memory_pool_collection_used_bytes gauge",
-          "#HELP jvm_memory_pool_collection_used_bytes",
-          "TYPE jvm_memory_pool_collection_used_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
-        ),
-        Chunk(
           "# TYPE jvm_memory_pool_collection_max_bytes gauge",
           "#HELP jvm_memory_pool_collection_max_bytes",
           "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\",} -1.0 1681853772729",
+        ),
+        Chunk(
+          "# TYPE jvm_memory_pool_collection_used_bytes gauge",
+          "#HELP jvm_memory_pool_collection_used_bytes",
+          "TYPE jvm_memory_pool_collection_used_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
         ),
       )
       assertTrue(groupMetricByType(encodedMetric) == encodedMetric)

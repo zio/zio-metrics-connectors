@@ -30,7 +30,7 @@ package object prometheus {
       } yield ()
 
   def groupMetricByType(report: Chunk[Chunk[String]]): Chunk[Chunk[String]] =
-    Chunk.fromIterable(report.groupMap(thm => thm.take(2))(thm => thm.drop(2)).map { case (th, m) =>
-      th.appendedAll(m.flatten)
+    Chunk.fromIterable(report.groupBy(thm => thm.take(2)).map { case (th, thmChunk) =>
+      th ++ thmChunk.map(_.drop(2)).flatten
     })
 }
