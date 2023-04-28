@@ -9,13 +9,56 @@ import zio.test.TestAspect._
 
 object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
 
-  override def spec = suite("The Prometheus encoding should")(
-    encodeCounter,
-    encodeGauge,
-    encodeFrequency,
-    encodeSummary,
-    encodeHistogram,
-  ) @@ timed @@ timeoutWarning(60.seconds) @@ parallel @@ withLiveClock
+  override def spec =
+    testGroupMetricByType +
+      suite("The Prometheus encoding should")(
+        encodeCounter,
+        encodeGauge,
+        encodeFrequency,
+        encodeSummary,
+        encodeHistogram,
+      ) @@ timed @@ timeoutWarning(60.seconds) @@ parallel @@ withLiveClock
+
+  def testGroupMetricByType = suite("The groupMetricByType method should")(
+    test("group metrics of same type together") {
+      val encodedMetric = Chunk(
+        Chunk(
+          "# TYPE jvm_memory_pool_collection_max_bytes gauge",
+          "#HELP jvm_memory_pool_collection_max_bytes",
+          "jvm_memory_pool_collection_max_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
+        ),
+        Chunk(
+          "# TYPE jvm_memory_pool_collection_max_bytes gauge",
+          "#HELP jvm_memory_pool_collection_max_bytes",
+          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\",} -1.0 1681853772729",
+        ),
+      )
+      val groupedMetric = Chunk(
+        Chunk(
+          "# TYPE jvm_memory_pool_collection_max_bytes gauge",
+          "#HELP jvm_memory_pool_collection_max_bytes",
+          "jvm_memory_pool_collection_max_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
+          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\",} -1.0 1681853772729",
+        ),
+      )
+      assertTrue(groupMetricByType(encodedMetric) == groupedMetric)
+    },
+    test("not group metrics of different types") {
+      val encodedMetric = Chunk(
+        Chunk(
+          "# TYPE jvm_memory_pool_collection_max_bytes gauge",
+          "#HELP jvm_memory_pool_collection_max_bytes",
+          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\",} -1.0 1681853772729",
+        ),
+        Chunk(
+          "# TYPE jvm_memory_pool_collection_used_bytes gauge",
+          "#HELP jvm_memory_pool_collection_used_bytes",
+          "TYPE jvm_memory_pool_collection_used_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
+        ),
+      )
+      assertTrue(groupMetricByType(encodedMetric) == encodedMetric)
+    },
+  )
 
   private def helpString(key: MetricKey.Untyped) =
     key.tags.find(_.key == descriptionKey).fold("")(d => s" ${d.value}")
