@@ -29,7 +29,8 @@ package object datadog {
     client: StatsdClient,
     config: DatadogConfig,
   ): Iterable[MetricEvent] => UIO[Unit] = events => {
-    val evtFilter: MetricEvent => Boolean = {
+    val evtFilter: MetricEvent => Boolean = if (config.sendUnchanged) { _ => true }
+    else {
       case MetricEvent.Unchanged(_, _, _) => false
       case _                              => true
     }

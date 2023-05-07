@@ -27,7 +27,8 @@ final case class DatadogConfig(
   histogramSendInterval: Option[Duration] = None,
   maxBatchedMetrics: Int = 10,
   maxQueueSize: Int = 100000,
-  containerId: Option[String] = None)
+  containerId: Option[String] = None,
+  sendUnchanged: Boolean = false)
 
 object DatadogConfig {
 
