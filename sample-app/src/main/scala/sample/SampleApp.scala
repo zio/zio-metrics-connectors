@@ -1,10 +1,9 @@
-package zio.sample
+package sample
 
 import java.net.InetSocketAddress
 
 import zio._
 import zio.http._
-//import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.http.html._
 import zio.http.model.{Headers, Method}
 import zio.metrics.connectors.{prometheus, statsd, MetricsConfig}
@@ -67,10 +66,6 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       // The statsd reporting layer
       ZLayer.succeed(StatsdConfig("127.0.0.1", 8125)),
       statsd.statsdLayer,
-
-      // The NewRelic reporting layer
-      // NewRelicConfig.fromEnvEULayer,
-      // newrelic.newRelicLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig
       // Do NOT forget the .unit for the JVM metrics layer

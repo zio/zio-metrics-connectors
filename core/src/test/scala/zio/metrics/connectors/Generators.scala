@@ -6,22 +6,22 @@ import zio.metrics.MetricPair.Untyped
 import zio.test._
 
 trait Generators {
-  val genPosDouble           = Gen.double(0.0, Double.MaxValue)
-  val genNegDouble           = Gen.double(Double.MinValue, 0.0)
-  def genSomeDoubles(n: Int) = Gen.chunkOfBounded(1, n)(genPosDouble)
+  val genPosDouble: Gen[Any, Double]                  = Gen.double(0.0, Double.MaxValue)
+  val genNegDouble: Gen[Any, Double]                  = Gen.double(Double.MinValue, 0.0)
+  def genSomeDoubles(n: Int): Gen[Any, Chunk[Double]] = Gen.chunkOfBounded(1, n)(genPosDouble)
 
-  val genPosLong = Gen.long(0L, Long.MaxValue)
+  val genPosLong: Gen[Any, Long] = Gen.long(0L, Long.MaxValue)
 
-  val nonEmptyString = Gen.alphaNumericString.filter(_.nonEmpty)
+  val nonEmptyString: Gen[Any, String] = Gen.alphaNumericString.filter(_.nonEmpty)
 
   val descriptionKey = "testDescription"
 
-  val genLabel =
+  val genLabel: Gen[Any, MetricLabel] =
     Gen.oneOf(Gen.const(descriptionKey), Gen.alphaNumericString).zipWith(Gen.alphaNumericString)(MetricLabel.apply)
 
-  val genTags = Gen.setOf(genLabel)
+  val genTags: Gen[Any, Set[MetricLabel]] = Gen.setOf(genLabel)
 
-  val genCounter = for {
+  val genCounter: Gen[Any, (MetricPair.Untyped, MetricState.Counter)] = for {
     name  <- nonEmptyString
     tags  <- genTags
     count <- Gen.double(1, 100)
@@ -30,7 +30,11 @@ trait Generators {
     (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.counter(name).tagged(tags), state)), state)
   }
 
-  def genCounterNamed(name: String, min: Double = 1.0, max: Double = 100) = for {
+  def genCounterNamed(
+    name: String,
+    min: Double = 1.0,
+    max: Double = 100,
+  ): Gen[Any, (MetricPair.Untyped, MetricState.Counter)] = for {
     count <- Gen.double(min, max)
     tags  <- genTags
   } yield {
@@ -38,17 +42,19 @@ trait Generators {
     (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.counter(name).tagged(tags), state)), state)
   }
 
-  def genFrequency(count: Int, pastValues: Ref[Set[String]]) = for {
-    name        <- nonEmptyString
-    tags        <- genTags
-    occurrences <- Gen.listOfN(count)(unqiueNonEmptyString(pastValues).flatMap(occName => genPosLong.map(occName -> _)))
-  } yield {
-    val asMap = occurrences.toMap
-    val state = MetricState.Frequency(asMap)
-    (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.frequency(name).tagged(tags), state)), state)
-  }
+  def genFrequency(count: Int, pastValues: Ref[Set[String]]): Gen[Any, (MetricPair.Untyped, MetricState.Frequency)] =
+    for {
+      name        <- nonEmptyString
+      tags        <- genTags
+      occurrences <-
+        Gen.listOfN(count)(uniqueNonEmptyString(pastValues).flatMap(occName => genPosLong.map(occName -> _)))
+    } yield {
+      val asMap = occurrences.toMap
+      val state = MetricState.Frequency(asMap)
+      (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.frequency(name).tagged(tags), state)), state)
+    }
 
-  val genFrequency1 = for {
+  val genFrequency1: Gen[Any, (MetricPair.Untyped, MetricState.Frequency)] = for {
     name    <- nonEmptyString
     tags    <- genTags
     occName <- nonEmptyString
@@ -59,7 +65,7 @@ trait Generators {
     (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.frequency(name).tagged(tags), state)), state)
   }
 
-  val genGauge: Gen[Any, (Untyped, MetricState.Gauge)] = for {
+  val genGauge: Gen[Any, (MetricPair.Untyped, MetricState.Gauge)] = for {
     name  <- nonEmptyString
     tags  <- genTags
     count <- genPosDouble
@@ -68,7 +74,7 @@ trait Generators {
     (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.counter(name).tagged(tags), state)), state)
   }
 
-  def genHistogram = for {
+  def genHistogram: Gen[Any, (MetricPair.Untyped, MetricState.Histogram)] = for {
     name  <- nonEmptyString
     tags  <- genTags
     count <- genPosLong
@@ -95,7 +101,7 @@ trait Generators {
     (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.histogram(name, boundaries).tagged(tags), state)), state)
   }
 
-  def genSummary = for {
+  def genSummary: Gen[Any, (MetricPair.Untyped, MetricState.Summary)] = for {
     name      <- nonEmptyString
     tags      <- genTags
     count     <- genPosLong
@@ -116,14 +122,13 @@ trait Generators {
     )
   }
 
-  def unqiueNonEmptyString(ref: Ref[Set[String]]) =
+  def uniqueNonEmptyString(ref: Ref[Set[String]]): Gen[Any, String] =
     Gen(
-      nonEmptyString.sample.filterZIO { s =>
+      nonEmptyString.sample.filterZIO { sample =>
         for {
-          exists <- ref.get.map(_.contains(s.value))
-          _      <- if (!exists) ref.update(_ + s.value) else ZIO.unit
+          exists <- ref.get.map(_.contains(sample.value))
+          _      <- ZIO.when(!exists)(ref.update(_ + sample.value))
         } yield !exists
       },
     )
-
 }

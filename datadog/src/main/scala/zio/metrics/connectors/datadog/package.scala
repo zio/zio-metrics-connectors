@@ -15,9 +15,9 @@ package object datadog {
         clt     <- StatsdClient.make.provideSome[Scope](ZLayer.succeed(StatsdConfig(config.host, config.port)))
         queue    = RingBuffer.apply[(MetricKey[MetricKeyType.Histogram], Double)](config.maxQueueSize)
         listener = new DataDogListener(queue)
-        _       <- Unsafe.unsafe(implicit unsafe =>
-                     ZIO.acquireRelease(ZIO.succeed(MetricClient.addListener(listener)))(_ =>
-                       ZIO.succeed(MetricClient.removeListener(listener)),
+        _       <- Unsafe.unsafe(unsafe =>
+                     ZIO.acquireRelease(ZIO.succeed(MetricClient.addListener(listener)(unsafe)))(_ =>
+                       ZIO.succeed(MetricClient.removeListener(listener)(unsafe)),
                      ),
                    )
         _       <- DataDogEventProcessor.make(clt, queue)

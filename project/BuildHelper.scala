@@ -60,7 +60,7 @@ object BuildHelper {
 
   private def extraOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((3, 1))  => dottyOptions
+      case Some((3, _))  => dottyOptions
       case Some((2, 13)) =>
         stdOpts213 ++ stdOpts2X
       case Some((2, 12)) =>
@@ -86,11 +86,11 @@ object BuildHelper {
   def stdSettings(prjName: String) =
     Seq(
       name                     := s"$prjName",
-      crossScalaVersions       := Seq(Scala212, Scala213, ScalaDotty),
+      crossScalaVersions       := Seq(Scala212, Scala213, Scala3),
       ThisBuild / scalaVersion := Scala213,
       scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value),
       libraryDependencies ++= {
-        if (scalaVersion.value != ScalaDotty)
+        if (scalaVersion.value != Scala3)
           Seq(
             ("com.github.ghik"   % "silencer-lib"    % silencerVersion(scalaVersion.value) % Provided)
               .cross(CrossVersion.full),

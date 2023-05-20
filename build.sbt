@@ -40,29 +40,77 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
 lazy val root =
-  project.in(file(".")).settings(publish / skip := true).aggregate(core, micrometer, docs)
+  project
+    .in(file("."))
+    .settings(publish / skip := true)
+    .aggregate(core, statsd, datadog, newrelic, prometheus, micrometer, docs)
 
 lazy val core =
   project
     .in(file("core"))
     .settings(
-      run / fork             := true,
-      Test / run / javaOptions += "-Djava.net.preferIPv4Stack=true",
-      Test / run / mainClass := Some("zio.sample.SampleApp"),
-      cancelable             := true,
       stdSettings("zio.metrics.connectors"),
       libraryDependencies ++= Seq(
         "dev.zio" %%% "zio"          % Version.zio,
-        "dev.zio" %%% "zio-json"     % Version.zioJson,
-        "dev.zio" %%% "zio-streams"  % Version.zio,
-        "dev.zio"  %% "zio-http"     % Version.zioHttp,
-        "dev.zio"  %% "zio-http"     % Version.zioHttp,
         "dev.zio" %%% "zio-test"     % Version.zio % Test,
         "dev.zio" %%% "zio-test-sbt" % Version.zio % Test,
       ),
     )
     .settings(buildInfoSettings("zio.metrics.connectors"))
     .enablePlugins(BuildInfoPlugin)
+
+lazy val statsd =
+  project
+    .in(file("statsd"))
+    .settings(stdSettings("zio.metrics.connectors.statsd"))
+    .enablePlugins(BuildInfoPlugin)
+    .dependsOn(core % "compile->compile;test->test")
+
+lazy val datadog =
+  project
+    .in(file("datadog"))
+    .settings(stdSettings("zio.metrics.connectors.datadog"))
+    .settings(buildInfoSettings("zio.metrics.connectors.datadog"))
+    .enablePlugins(BuildInfoPlugin)
+    .dependsOn(
+      core   % "compile->compile;test->test",
+      statsd % "compile->compile;test->test",
+    )
+
+lazy val newrelic =
+  project
+    .in(file("newrelic"))
+    .settings(
+      stdSettings("zio.metrics.connectors.newrelic"),
+      libraryDependencies ++= Seq(
+        "dev.zio"  %% "zio-http" % Version.zioHttp,
+        "dev.zio" %%% "zio-json" % Version.zioJson,
+      ),
+    )
+    .settings(buildInfoSettings("zio.metrics.connectors.newrelic"))
+    .enablePlugins(BuildInfoPlugin)
+    .dependsOn(core % "compile->compile;test->test")
+
+lazy val prometheus =
+  project
+    .in(file("prometheus"))
+    .settings(stdSettings("zio.metrics.connectors.prometheus"))
+    .settings(buildInfoSettings("zio.metrics.connectors.prometheus"))
+    .enablePlugins(BuildInfoPlugin)
+    .dependsOn(core % "compile->compile;test->test")
+
+lazy val sampleApp =
+  project
+    .in(file("sample-app"))
+    .settings(
+      run / fork := true,
+      run / javaOptions += "-Djava.net.preferIPv4Stack=true",
+      libraryDependencies ++= Seq(
+        "dev.zio"  %% "zio-http" % Version.zioHttp,
+        "dev.zio" %%% "zio-json" % Version.zioJson,
+      ),
+    )
+    .dependsOn(statsd, prometheus)
 
 lazy val micrometer =
   project

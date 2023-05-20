@@ -2,7 +2,6 @@ package zio.metrics.connectors.newrelic
 
 import zio._
 import zio.http._
-import zio.http.model.{Header, Headers}
 import zio.json.ast.Json
 import zio.stream._
 
@@ -37,7 +36,7 @@ object NewRelicClient {
             )
             .toString
 
-          URL.fromString(cfg.newRelicURI.endpoint).map { url =>
+          URL.decode(cfg.newRelicURI.endpoint).map { url =>
             Request
               .post(
                 url = url,
@@ -59,9 +58,9 @@ object NewRelicClient {
         .unit
 
     private lazy val headers = Headers(
-      Header("Api-Key", cfg.apiKey),
-      Header("Content-Type", "application/json"),
-      Header("Accept", "*/*"),
+      Header.Custom("Api-Key", cfg.apiKey),
+      Header.ContentType(MediaType.application.json),
+      Header.Accept(MediaType.any),
     )
   }
 }

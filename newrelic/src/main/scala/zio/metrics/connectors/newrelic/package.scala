@@ -6,14 +6,11 @@ import zio.metrics.connectors.internal.MetricsClient
 
 package object newrelic {
 
-  lazy val newRelicLayer: ZLayer[MetricsConfig & NewRelicConfig, Nothing, Unit] = {
-    val metricsConfig  = ZLayer.service[MetricsConfig]
-    val newRelicConfig = ZLayer.service[NewRelicConfig]
-    val client         = Client.default.orDie
-    val scope          = Scope.default
-
-    metricsConfig ++ newRelicConfig ++ (scope >>> client) >>> make
-  }
+  lazy val newRelicLayer: ZLayer[MetricsConfig & NewRelicConfig, Nothing, Unit] =
+    ZLayer.makeSome[MetricsConfig & NewRelicConfig, Unit](
+      make,
+      Client.default.orDie,
+    )
 
   private lazy val make: URLayer[MetricsConfig & NewRelicConfig & Client, Unit] = ZLayer(for {
     encoder <- newRelicEncoder
