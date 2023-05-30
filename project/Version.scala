@@ -4,7 +4,7 @@ object Version {
   val Scala213   = "2.13.10"
   val ScalaDotty = "3.2.1"
 
-  val zio     = "2.0.4"
+  val zio     = "2.0.13"
   val zioJson = "0.3.0"
   val zioHttp = "0.0.3"
 

@@ -17,6 +17,19 @@ private[micrometer] class MicrometerMetricListener(meterRegistry: MeterRegistry)
   private lazy val gauges: ConcurrentHashMap[MetricKey[Gauge], AtomicDouble] =
     new ConcurrentHashMap[MetricKey[Gauge], AtomicDouble]()
 
+  private def getOrCreateGaugeRef(key: MetricKey[Gauge]): AtomicDouble =
+    gauges
+      .computeIfAbsent(
+        key,
+        _ =>
+          meterRegistry.gauge(
+            key.name,
+            micrometerTags(key.tags).asJava,
+            AtomicDouble.make(0),
+            (v: AtomicDouble) => v.get(),
+          ),
+      )
+
   override def updateHistogram(
     key: MetricKey[MetricKeyType.Histogram],
     value: Double,
@@ -30,18 +43,10 @@ private[micrometer] class MicrometerMetricListener(meterRegistry: MeterRegistry)
       .record(value)
 
   override def updateGauge(key: MetricKey[Gauge], value: Double)(implicit unsafe: Unsafe): Unit =
-    gauges
-      .computeIfAbsent(
-        key,
-        _ =>
-          meterRegistry.gauge(
-            key.name,
-            micrometerTags(key.tags).asJava,
-            AtomicDouble.make(0),
-            (v: AtomicDouble) => v.get(),
-          ),
-      )
-      .set(value)
+    getOrCreateGaugeRef(key).set(value)
+
+  override def modifyGauge(key: MetricKey[Gauge], value: Double)(implicit unsafe: Unsafe): Unit =
+    getOrCreateGaugeRef(key).incrementBy(value)
 
   override def updateFrequency(key: MetricKey[Frequency], value: String)(implicit unsafe: Unsafe): Unit =
     meterRegistry
@@ -95,6 +100,17 @@ private[micrometer] class MicrometerMetricListener(meterRegistry: MeterRegistry)
     def set(newValue: Double): Unit =
       ref.set(JDouble.doubleToLongBits(newValue))
 
+    def compareAndSet(expected: Double, newValue: Double): Boolean =
+      ref.compareAndSet(JDouble.doubleToLongBits(expected), JDouble.doubleToLongBits(newValue))
+
+    def incrementBy(value: Double): Unit = {
+      var loop = true
+
+      while (loop) {
+        val current = get()
+        loop = !compareAndSet(current, current + value)
+      }
+    }
   }
 
   private object AtomicDouble {
