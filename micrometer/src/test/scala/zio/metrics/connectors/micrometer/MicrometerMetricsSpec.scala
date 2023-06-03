@@ -2,7 +2,7 @@ package zio.metrics.connectors.micrometer
 
 import java.time.Instant
 
-import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
+import scala.jdk.CollectionConverters._
 
 import zio.{durationInt, Chunk, ZIO, ZLayer}
 import zio.metrics.{Metric, MetricKey, MetricKeyType}
@@ -24,6 +24,7 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
   ).provide(
     micrometerLayer,
     ZLayer.succeed(new SimpleMeterRegistry()),
+    ZLayer.succeed(MicroMeterConfig.default),
   ) @@ timed @@ timeoutWarning(60.seconds)
 
   private def testMetric[Type <: MetricKeyType](
@@ -32,7 +33,7 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
   ) =
     for {
       meterRegistry <- ZIO.service[MeterRegistry]
-      _             <- ZIO.foreach(testValues)(v => ZIO.succeed(v) @@ Metric.fromMetricKey(key).tagged("key", "value"))
+      _             <- ZIO.foreachDiscard(testValues)(v => ZIO.succeed(v) @@ Metric.fromMetricKey(key).tagged("key", "value"))
     } yield meterRegistry.get(key.name).tags(micrometerTags(key.tags).asJava)
 
   private val testCounter = test("catch zio counter updates") {
@@ -62,9 +63,9 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
         resultSummary.count() == testData.size &&
         resultSummary.total() == testData.sum &&
         resultSummary.max() == testData.max &&
-        resultSummary.histogramCounts().toSeq == buckets.values.map(bound =>
-          new CountAtBucket(bound, testData.count(_ <= bound)),
-        )
+        resultSummary.histogramCounts().toSeq == buckets.values
+          .map(bound => new CountAtBucket(bound, testData.count(_ <= bound)))
+          .toSeq
       },
     )
   }
@@ -72,7 +73,7 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
   private val testSummary = test("catch zio summary updates") {
     val name        = "testSummary"
     val now         = Instant.now()
-    val testData    = Chunk.from(1 to 1000).map(i => i.toDouble -> now)
+    val testData    = Chunk.fromIterable(1 to 1000).map(i => i.toDouble -> now)
     val percentiles = Chunk(0.1, 0.5, 0.9)
     testMetric(MetricKey.summary(name, 1.day, 100, 0.03d, percentiles))(testData).map(searchResult =>
       assertTrue {

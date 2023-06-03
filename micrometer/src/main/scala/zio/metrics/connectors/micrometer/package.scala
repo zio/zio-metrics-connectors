@@ -9,7 +9,7 @@ import io.micrometer.core.instrument.{MeterRegistry, Tag}
 
 package object micrometer {
 
-  lazy val micrometerLayer: ZLayer[MeterRegistry, Nothing, Unit] =
+  val micrometerLayer: ZLayer[MeterRegistry with MicroMeterConfig, Nothing, Unit] =
     ZLayer.scoped(
       for {
         micrometerMetricListener <- MicrometerMetricListener.make
@@ -23,5 +23,4 @@ package object micrometer {
 
   private[micrometer] def micrometerTags(zioMetricTags: Iterable[MetricLabel]): Iterable[Tag] =
     zioMetricTags.map(metricTag => Tag.of(metricTag.key, metricTag.value))
-
 }
