@@ -9,7 +9,7 @@ import io.micrometer.core.instrument.{MeterRegistry, Tag}
 
 package object micrometer {
 
-  val micrometerLayer: ZLayer[MeterRegistry with MicroMeterConfig, Nothing, Unit] =
+  lazy val micrometerLayer: ZLayer[MeterRegistry with MicrometerConfig, Nothing, Unit] =
     ZLayer.scoped(
       for {
         micrometerMetricListener <- MicrometerMetricListener.make

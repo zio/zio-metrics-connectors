@@ -7,7 +7,7 @@ import zio.http._
 import zio.http.html._
 import zio.http.model.{Headers, Method}
 import zio.metrics.connectors.micrometer
-import zio.metrics.connectors.micrometer.MicroMeterConfig
+import zio.metrics.connectors.micrometer.MicrometerConfig
 import zio.metrics.jvm.DefaultJvmMetrics
 import zio.sample.InstrumentedSample
 
@@ -55,7 +55,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       serverConfig,
       Server.live,
       ZLayer.succeed(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)),
-      ZLayer.succeed(MicroMeterConfig.default),
+      ZLayer.succeed(MicrometerConfig.default),
       micrometer.micrometerLayer,
       Runtime.enableRuntimeMetrics,
       DefaultJvmMetrics.live.unit,

@@ -24,7 +24,7 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
   ).provide(
     micrometerLayer,
     ZLayer.succeed(new SimpleMeterRegistry()),
-    ZLayer.succeed(MicroMeterConfig.default),
+    ZLayer.succeed(MicrometerConfig.default),
   ) @@ timed @@ timeoutWarning(60.seconds)
 
   private def testMetric[Type <: MetricKeyType](

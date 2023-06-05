@@ -13,9 +13,9 @@ import zio.metrics.connectors.micrometer.internal.AtomicDouble
 import io.micrometer.core.instrument.{DistributionSummary, MeterRegistry, Tag}
 
 private[micrometer] class MicrometerMetricListener(
-  meterRegistry: MeterRegistry,
-  config: MicroMeterConfig,
-  activeGauges: ConcurrentMap[MetricKey.Gauge, AtomicDouble])
+                                                    meterRegistry: MeterRegistry,
+                                                    config: MicrometerConfig,
+                                                    activeGauges: ConcurrentMap[MetricKey.Gauge, AtomicDouble])
     extends MetricListener {
   private def getOrCreateGaugeRef(key: MetricKey[Gauge]): AtomicDouble =
     activeGauges.computeIfAbsent(
@@ -80,10 +80,10 @@ private[micrometer] class MicrometerMetricListener(
 }
 
 object MicrometerMetricListener {
-  private[micrometer] def make: URIO[MeterRegistry with MicroMeterConfig, MicrometerMetricListener] =
+  private[micrometer] def make: URIO[MeterRegistry with MicrometerConfig, MicrometerMetricListener] =
     for {
       meterRegistry <- ZIO.service[MeterRegistry]
-      config        <- ZIO.service[MicroMeterConfig]
+      config        <- ZIO.service[MicrometerConfig]
       activeGauges  <- ZIO.succeed(new ConcurrentHashMap[MetricKey.Gauge, AtomicDouble])
     } yield new MicrometerMetricListener(meterRegistry, config, activeGauges)
 }
