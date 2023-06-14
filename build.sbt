@@ -40,7 +40,7 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
 lazy val root =
-  project.in(file(".")).settings(publish / skip := true).aggregate(core, docs)
+  project.in(file(".")).settings(publish / skip := true).aggregate(core, micrometer, docs)
 
 lazy val core =
   project
@@ -56,12 +56,27 @@ lazy val core =
         "dev.zio" %%% "zio-json"     % Version.zioJson,
         "dev.zio" %%% "zio-streams"  % Version.zio,
         "dev.zio"  %% "zio-http"     % Version.zioHttp,
+        "dev.zio"  %% "zio-http"     % Version.zioHttp,
         "dev.zio" %%% "zio-test"     % Version.zio % Test,
         "dev.zio" %%% "zio-test-sbt" % Version.zio % Test,
       ),
     )
     .settings(buildInfoSettings("zio.metrics.connectors"))
     .enablePlugins(BuildInfoPlugin)
+
+lazy val micrometer =
+  project
+    .in(file("micrometer"))
+    .settings(
+      stdSettings("zio.metrics.connectors.micrometer"),
+      libraryDependencies ++= Seq(
+        "io.micrometer" % "micrometer-core"                % Version.micrometer,
+        "io.micrometer" % "micrometer-registry-prometheus" % Version.micrometer % Test,
+      ),
+    )
+    .settings(buildInfoSettings("zio.metrics.connectors.micrometer"))
+    .enablePlugins(BuildInfoPlugin)
+    .dependsOn(core % "compile->compile;test->test")
 
 lazy val docs = project
   .in(file("zio-metrics-connectors-docs"))

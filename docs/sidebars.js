@@ -11,6 +11,7 @@ const sidebars = {
         "metrics/zmx-metric-reference",
         "metrics/statsd-client",
         "metrics/prometheus-client",
+        "metrics/micrometer-connector",
         "metrics/instrumentation-examples",
       ]
     }

@@ -118,13 +118,11 @@ trait Generators {
 
   def unqiueNonEmptyString(ref: Ref[Set[String]]) =
     Gen(
-      nonEmptyString.sample.filterZIO {
-        case Some(s) =>
-          for {
-            exists <- ref.get.map(_.contains(s.value))
-            _      <- if (!exists) ref.update(_ + s.value) else ZIO.unit
-          } yield !exists
-        case _       => ZIO.succeed(true)
+      nonEmptyString.sample.filterZIO { s =>
+        for {
+          exists <- ref.get.map(_.contains(s.value))
+          _      <- if (!exists) ref.update(_ + s.value) else ZIO.unit
+        } yield !exists
       },
     )
 

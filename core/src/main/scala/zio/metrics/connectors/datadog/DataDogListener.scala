@@ -3,6 +3,7 @@ package zio.metrics.connectors.datadog
 import zio.Unsafe
 import zio.internal.RingBuffer
 import zio.metrics.{MetricKey, MetricKeyType, MetricListener}
+import zio.metrics.MetricKeyType.Gauge
 
 class DataDogListener(queue: RingBuffer[(MetricKey[MetricKeyType.Histogram], Double)]) extends MetricListener {
   def updateHistogram(key: MetricKey[MetricKeyType.Histogram], value: Double)(implicit unsafe: Unsafe): Unit = {
@@ -10,6 +11,8 @@ class DataDogListener(queue: RingBuffer[(MetricKey[MetricKeyType.Histogram], Dou
   }
 
   def updateGauge(key: MetricKey[MetricKeyType.Gauge], value: Double)(implicit unsafe: Unsafe): Unit = ()
+
+  def modifyGauge(key: MetricKey[Gauge], value: Double)(implicit unsafe: Unsafe): Unit = ()
 
   def updateFrequency(key: MetricKey[MetricKeyType.Frequency], value: String)(implicit unsafe: Unsafe): Unit = ()
 
@@ -21,4 +24,5 @@ class DataDogListener(queue: RingBuffer[(MetricKey[MetricKeyType.Histogram], Dou
   ): Unit = ()
 
   def updateCounter(key: MetricKey[MetricKeyType.Counter], value: Double)(implicit unsafe: Unsafe): Unit = ()
+
 }
