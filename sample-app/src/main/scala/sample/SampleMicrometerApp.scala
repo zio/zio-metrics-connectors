@@ -5,18 +5,18 @@ import java.net.InetSocketAddress
 import zio._
 import zio.http._
 import zio.http.html._
-import zio.http.model.{Headers, Method}
 import zio.metrics.connectors.micrometer
 import zio.metrics.connectors.micrometer.MicrometerConfig
 import zio.metrics.jvm.DefaultJvmMetrics
-import zio.sample.InstrumentedSample
 
 import io.micrometer.prometheus.{PrometheusConfig, PrometheusMeterRegistry}
 
-object SampleApp extends ZIOAppDefault with InstrumentedSample {
+/**
+ * This is a sample app that shows how to use the Micrometer connector.
+ */
+object SampleMicrometerApp extends ZIOAppDefault with InstrumentedSample {
 
   private val bindPort = 8080
-  private val nThreads = 5
 
   private lazy val indexPage =
     """<html>
@@ -27,11 +27,11 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       |</html>""".stripMargin
 
   private lazy val static =
-    Http.collect[Request] { case Method.GET -> !! => Response.html(Html.fromString(indexPage)) }
+    Http.collect[Request] { case Method.GET -> Root => Response.html(Html.fromString(indexPage)) }
 
   private lazy val micrometerPrometheusRouter =
     Http
-      .collectZIO[Request] { case Method.GET -> !! / "micrometer" / "prometheusMetrics" =>
+      .collectZIO[Request] { case Method.GET -> Root / "micrometer" / "prometheusMetrics" =>
         ZIO.serviceWith[PrometheusMeterRegistry](m => noCors(Response.text(m.scrape())))
       }
 
@@ -44,7 +44,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
   private lazy val runHttp = (serverInstall *> ZIO.never).forkDaemon
 
   private lazy val serverConfig =
-    ZLayer.succeed(ServerConfig(address = new InetSocketAddress(bindPort), nThreads = nThreads))
+    ZLayer.succeed(Server.Config.default.port(bindPort))
 
   override def run: ZIO[Environment & ZIOAppArgs & Scope, Any, Any] = (for {
     f <- runHttp

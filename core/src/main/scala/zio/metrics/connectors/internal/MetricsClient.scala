@@ -29,18 +29,15 @@ sealed abstract private class MetricsClient(
 
   private def retrieveNext(
     implicit trace: Trace,
-  ): UIO[Set[MetricEvent]] = for {
-    ts  <- ZIO.clockWith(_.instant)
-    res <- latestSnapshot.modify { old =>
-             // first we get the state for all metrics that we had captured in the last run
-             val oldMap = stateMap(old)
-             // then we get the snapshot from the underlying metricRegistry
-             val next   = Unsafe.unsafe(implicit u => metricRegistry.snapshot())
-             val res    = events(oldMap, next)
-             (res, next)
-           }
-
-  } yield res
+  ): UIO[Set[MetricEvent]] =
+    latestSnapshot.modify { old =>
+      // first we get the state for all metrics that we had captured in the last run
+      val oldMap = stateMap(old)
+      // then we get the snapshot from the underlying metricRegistry
+      val next   = Unsafe.unsafe(implicit u => metricRegistry.snapshot())
+      val res    = events(oldMap, next)
+      (res, next)
+    }
 
   // This will create a map for the metrics captured in the last snapshot
   private def stateMap(metrics: Set[MetricPair.Untyped]): Map[MetricKey.Untyped, MetricState.Untyped] = {

@@ -13,11 +13,11 @@ package object micrometer {
     ZLayer.scoped(
       for {
         micrometerMetricListener <- MicrometerMetricListener.make
-        _                        <- Unsafe.unsafe(implicit unsafe =>
-                                      ZIO.acquireRelease(ZIO.succeed(MetricClient.addListener(micrometerMetricListener)))(_ =>
-                                        ZIO.succeed(MetricClient.removeListener(micrometerMetricListener)),
-                                      ),
-                                    )
+        _                        <- Unsafe.unsafe { unsafe =>
+                                      val acquire = ZIO.succeed(MetricClient.addListener(micrometerMetricListener)(unsafe))
+                                      val release = (_: Unit) => ZIO.succeed(MetricClient.removeListener(micrometerMetricListener)(unsafe))
+                                      ZIO.acquireRelease(acquire)(release)
+                                    }
       } yield (),
     )
 

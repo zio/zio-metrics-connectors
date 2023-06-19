@@ -106,11 +106,12 @@ lazy val sampleApp =
       run / fork := true,
       run / javaOptions += "-Djava.net.preferIPv4Stack=true",
       libraryDependencies ++= Seq(
-        "dev.zio"  %% "zio-http" % Version.zioHttp,
-        "dev.zio" %%% "zio-json" % Version.zioJson,
+        "dev.zio"      %% "zio-http"                       % Version.zioHttp,
+        "dev.zio"     %%% "zio-json"                       % Version.zioJson,
+        "io.micrometer" % "micrometer-registry-prometheus" % Version.micrometer,
       ),
     )
-    .dependsOn(statsd, prometheus)
+    .dependsOn(statsd, prometheus, micrometer)
 
 lazy val micrometer =
   project
@@ -118,8 +119,8 @@ lazy val micrometer =
     .settings(
       stdSettings("zio.metrics.connectors.micrometer"),
       libraryDependencies ++= Seq(
-        "io.micrometer" % "micrometer-core"                % Version.micrometer,
-        "io.micrometer" % "micrometer-registry-prometheus" % Version.micrometer % Test,
+        "io.micrometer"           % "micrometer-core"         % Version.micrometer,
+        "org.scala-lang.modules" %% "scala-collection-compat" % Version.scalaCompat,
       ),
     )
     .settings(buildInfoSettings("zio.metrics.connectors.micrometer"))
