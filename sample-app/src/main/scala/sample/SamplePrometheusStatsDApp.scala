@@ -1,21 +1,19 @@
-package zio.sample
-
-import java.net.InetSocketAddress
+package sample
 
 import zio._
 import zio.http._
-//import zio.metrics.connectors.newrelic.NewRelicConfig
 import zio.http.html._
-import zio.http.model.{Headers, Method}
 import zio.metrics.connectors.{prometheus, statsd, MetricsConfig}
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.statsd.StatsdConfig
 import zio.metrics.jvm.DefaultJvmMetrics
 
-object SampleApp extends ZIOAppDefault with InstrumentedSample {
+/**
+ * This is a sample app that shows how to use the Prometheus and StatsD connectors.
+ */
+object SamplePrometheusStatsDApp extends ZIOAppDefault with InstrumentedSample {
 
   private val bindPort = 8080
-  private val nThreads = 5
 
   private val metricsConfig = ZLayer.succeed(MetricsConfig(5.seconds))
 
@@ -29,11 +27,11 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       |</html>""".stripMargin
 
   private lazy val static =
-    Http.collect[Request] { case Method.GET -> !! => Response.html(Html.fromString(indexPage)) }
+    Http.collect[Request] { case Method.GET -> Root => Response.html(Html.fromString(indexPage)) }
 
   private lazy val prometheusRouter =
     Http
-      .collectZIO[Request] { case Method.GET -> !! / "prometheus" / "metrics" =>
+      .collectZIO[Request] { case Method.GET -> Root / "prometheus" / "metrics" =>
         ZIO.serviceWithZIO[PrometheusPublisher](_.get.map(Response.text))
       }
 
@@ -45,8 +43,7 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
 
   private lazy val runHttp = (serverInstall *> ZIO.never).forkDaemon
 
-  private lazy val serverConfig =
-    ZLayer.succeed(ServerConfig(address = new InetSocketAddress(bindPort), nThreads = nThreads))
+  private lazy val serverConfig = ZLayer.succeed(Server.Config.default.port(bindPort))
 
   override def run: ZIO[Environment & ZIOAppArgs & Scope, Any, Any] = (for {
     f <- runHttp
@@ -67,10 +64,6 @@ object SampleApp extends ZIOAppDefault with InstrumentedSample {
       // The statsd reporting layer
       ZLayer.succeed(StatsdConfig("127.0.0.1", 8125)),
       statsd.statsdLayer,
-
-      // The NewRelic reporting layer
-      // NewRelicConfig.fromEnvEULayer,
-      // newrelic.newRelicLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig
       // Do NOT forget the .unit for the JVM metrics layer

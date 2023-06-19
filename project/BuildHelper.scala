@@ -52,15 +52,11 @@ object BuildHelper {
     "-Xignore-scala2-macros",
   )
 
-  private def silencerVersion(scalaVersion: String) = scalaVersion match {
-    case "2.12.17" => "1.7.11"
-    case "2.13.10" => "1.7.12"
-    case _         => "1.7.1"
-  }
+  private val silencerVersion = "1.7.13"
 
   private def extraOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((3, 1))  => dottyOptions
+      case Some((3, _))  => dottyOptions
       case Some((2, 13)) =>
         stdOpts213 ++ stdOpts2X
       case Some((2, 12)) =>
@@ -86,16 +82,16 @@ object BuildHelper {
   def stdSettings(prjName: String) =
     Seq(
       name                     := s"$prjName",
-      crossScalaVersions       := Seq(Scala212, Scala213, ScalaDotty),
+      crossScalaVersions       := Seq(Scala212, Scala213, Scala3),
       ThisBuild / scalaVersion := Scala213,
       scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value),
       libraryDependencies ++= {
-        if (scalaVersion.value != ScalaDotty)
+        if (scalaVersion.value != Scala3)
           Seq(
-            ("com.github.ghik"   % "silencer-lib"    % silencerVersion(scalaVersion.value) % Provided)
+            ("com.github.ghik"   % "silencer-lib"    % silencerVersion % Provided)
               .cross(CrossVersion.full),
             compilerPlugin(
-              ("com.github.ghik" % "silencer-plugin" % silencerVersion(scalaVersion.value)).cross(CrossVersion.full),
+              ("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full),
             ),
           )
         else

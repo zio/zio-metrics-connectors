@@ -1,4 +1,4 @@
-package zio.sample
+package sample
 
 import zio._
 import zio.metrics._

@@ -1,7 +1,6 @@
 package zio.metrics.connectors.statsd
 
-import zio._
-import zio.ULayer
+import zio.{ULayer, _}
 
 final case class StatsdConfig(
   host: String,
