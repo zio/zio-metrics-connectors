@@ -2,6 +2,7 @@ package zio.metrics.connectors.micrometer
 
 import java.time.Instant
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
+import java.util.function.{Function => JFunction}
 
 import scala.jdk.CollectionConverters._
 
@@ -10,24 +11,26 @@ import zio.metrics.{MetricKey, MetricKeyType, MetricListener}
 import zio.metrics.MetricKeyType.{Counter, Frequency, Gauge}
 import zio.metrics.connectors.micrometer.internal.AtomicDouble
 
-import io.micrometer.core.instrument.{DistributionSummary, MeterRegistry, Tag}
+import io.micrometer.core.instrument.{DistributionSummary, Gauge => MGauge, MeterRegistry, Tag}
 
 private[micrometer] class MicrometerMetricListener(
   meterRegistry: MeterRegistry,
   config: MicrometerConfig,
   activeGauges: ConcurrentMap[MetricKey.Gauge, AtomicDouble])
     extends MetricListener {
+
+  private val newGaugeStateFunction: JFunction[MetricKey.Gauge, AtomicDouble] = key => {
+    val gaugeState = AtomicDouble.make(0)
+    MGauge
+      .builder(key.name, gaugeState, (v: AtomicDouble) => v.get())
+      .tags(micrometerTags(key.tags).asJava)
+      .strongReference(true)
+      .register(meterRegistry)
+    gaugeState
+  }
+
   private def getOrCreateGaugeRef(key: MetricKey[Gauge]): AtomicDouble =
-    activeGauges.computeIfAbsent(
-      key,
-      _ =>
-        meterRegistry.gauge(
-          key.name,
-          micrometerTags(key.tags).asJava,
-          AtomicDouble.make(0),
-          (v: AtomicDouble) => v.get(),
-        ),
-    )
+    activeGauges.computeIfAbsent(key, newGaugeStateFunction)
 
   override def updateHistogram(
     key: MetricKey[MetricKeyType.Histogram],
