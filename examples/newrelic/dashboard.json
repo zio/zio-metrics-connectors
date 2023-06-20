@@ -1,14 +1,14 @@
 {
-  "name": "ZIO ZMX Metrics",
+  "name": "ZIO Metrics",
   "description": null,
   "permissions": "PUBLIC_READ_WRITE",
   "pages": [
     {
-      "name": "ZIO ZMX Metrics",
+      "name": "ZIO Metrics",
       "description": null,
       "widgets": [
         {
-          "title": "ZIO ZMX CountAll Demo",
+          "title": "ZIO CountAll Demo",
           "layout": {
             "column": 1,
             "row": 1,
@@ -35,7 +35,7 @@
           }
         },
         {
-          "title": "ZIO ZMX Demo Gauges",
+          "title": "ZIO Demo Gauges",
           "layout": {
             "column": 7,
             "row": 1,
@@ -65,7 +65,7 @@
           }
         },
         {
-          "title": "ZIO ZMX Set Count",
+          "title": "ZIO Set Count",
           "layout": {
             "column": 1,
             "row": 4,
@@ -86,7 +86,7 @@
             "nrqlQueries": [
               {
                 "accountId": 3455444,
-                "query": "SELECT sum(frequency) FROM Metric FACET zmx.frequency.name  SINCE 2 MINUTES AGO TIMESERIES"
+                "query": "SELECT sum(frequency) FROM Metric FACET zio.frequency.name  SINCE 2 MINUTES AGO TIMESERIES"
               }
             ],
             "yAxisLeft": {
@@ -113,7 +113,7 @@
             "nrqlQueries": [
               {
                 "accountId": 3455444,
-                "query": "SELECT latest(zio_fiber_fork_locations) FROM Metric FACET zmx.frequency.name "
+                "query": "SELECT latest(zio_fiber_fork_locations) FROM Metric FACET zio.frequency.name "
               }
             ]
           }

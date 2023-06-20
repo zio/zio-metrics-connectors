@@ -300,7 +300,7 @@
           "refId": "A"
         }
       ],
-      "title": "ZMX Summary",
+      "title": "ZIO Summary",
       "type": "timeseries"
     },
     {
@@ -448,14 +448,14 @@
             "uid": "9EsxnFw7z"
           },
           "editorMode": "code",
-          "expr": "zmxHistogram_bucket",
+          "expr": "myHistogram_bucket",
           "interval": "",
           "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "ZMX Sample Histogram",
+      "title": "ZIO Sample Histogram",
       "type": "timeseries"
     },
     {
@@ -613,7 +613,7 @@
           "refId": "A"
         }
       ],
-      "title": "ZMX Sample Set",
+      "title": "ZIO Sample Set",
       "type": "piechart"
     },
     {
@@ -801,7 +801,7 @@
           "refId": "B"
         }
       ],
-      "title": "ZMX Gauges",
+      "title": "ZIO Gauges",
       "type": "timeseries"
     }
   ],

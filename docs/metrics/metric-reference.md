@@ -167,7 +167,7 @@ yielding a `Double`.
 
 ```scala 
 val aspHistogram =
-  Metric.histogram("histogram", Histogram.Boundaries.linear(0.0d, 10.0d, 11))
+  Metric.histogram("myHistogram", Histogram.Boundaries.linear(0.0d, 10.0d, 11))
 ```
 
 Now we can apply the histogram to effects producing `Double`:

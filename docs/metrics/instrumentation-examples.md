@@ -8,7 +8,7 @@ import zio._
 import zio.metrics._
 ```
 
-The trait below is used in the ZMX sample application just to show how the individual aspects 
+The trait below is used in the ZIO Metrics sample application just to show how the individual aspects 
 can be configured and used. 
 
 Please refer to [StatsD](statsd-client.md) and [Prometheus](prometheus-client.md) to see how the captured 
@@ -25,7 +25,7 @@ trait InstrumentedSample {
   // Create a histogram with 12 buckets: 0..100 in steps of 10, Infinite
   // It also can be applied to effects yielding a Double
   val aspHistogram =
-    Metric.histogram("zmxHistogram", MetricKeyType.Histogram.Boundaries.linear(0.0d, 10.0d, 11))
+    Metric.histogram("myHistogram", MetricKeyType.Histogram.Boundaries.linear(0.0d, 10.0d, 11))
 
   // Create a summary that can hold 100 samples, the max age of the samples is 1 day.
   // The summary should report th 10%, 50% and 90% Quantile

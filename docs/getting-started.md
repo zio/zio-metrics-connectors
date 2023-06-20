@@ -3,7 +3,7 @@ id: getting-started
 title: "Getting Started"
 ---
 
-ZIO ZMX lets you observe everything that goes on in your ZIO application.
+ZIO Metrics lets you observe everything that goes on in your ZIO application.
 
 Tests are important for verifying the correctness of the code we write. However, when we go into production conditions 
 are inevitably different than in testing and we need to know what is going on in our application in real time so we 
@@ -17,25 +17,24 @@ metrics backends with functional effect systems before, forcing users to develop
 are not connected with the runtime of the effect system, so they have no ability to provide insights on what is going 
 on at the level of the runtime such as the activity of individual fibers.
 
-ZIO ZMX solves this problem. ZIO ZMX can be added to any application with only a few lines of code and provides 
+ZIO Metrics solves this problem. ZIO Metrics can be added to any application with only a few lines of code and provides 
 two types of insights:
 
  - **Diagnostics** — Diagnostics are pre-defined data on the behavior of the application as it is running provided directly by the ZIO runtime, such as the number of fibers in the application, distribution of fiber lifetimes, and breakdown of fiber reasons for termination.
- - **[Metrics](metrics/index.md)** — Metrics are used-defined data, such as the number of times a certain section of code was executed, that are tracked by ZIO ZMX and made available either directly or through third party metrics solutions such as Prometheus or StatsD.
+ - **[Metrics](metrics/metric-reference.md)** — Metrics are used-defined data, such as the number of times a certain section of code was executed, that are tracked by ZIO Metrics and made available either directly or through third party metrics solutions such as Prometheus, StatsD or Micrometer.
 
 See the corresponding sections for more information on how to use each of these pieces of functionality.
 
 ## Installation
 
-Include ZIO ZMX in your project by adding the following to your `build.sbt`:
+Choose and include ZIO Metrics connector in your project by adding the following to your `build.sbt` (for example prometheus connector):
 
 ```scala mdoc:passthrough
 
 println(s"""```""")
 if (zio.metrics.connectors.BuildInfo.isSnapshot)
   println(s"""resolvers += Resolver.sonatypeRepo("snapshots")""")
-println(s"""libraryDependencies += "dev.zio" %% "zio-metrics-connectors" % "${zio.metrics.connectors.BuildInfo.version}"""")
+println(s"""libraryDependencies += "dev.zio" %% "zio-metrics-connectors-prometheus" % "${zio.metrics.connectors.BuildInfo.version}"""")
 println(s"""```""")
 
 ```
-

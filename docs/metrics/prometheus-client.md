@@ -7,13 +7,13 @@ In a normal prometheus setup we will find prometheus agents which query configur
 at regular intervals. The endpoints are HTTP endpoints serving the current metric state in 
 an encoding defined by [prometheus](https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format).
 
-ZMX provides the Prometheus encoding for the captured metrics out of the box. To avoid enforcing 
+ZIO Metrics provides the Prometheus encoding for the captured metrics out of the box. To avoid enforcing 
 a particular HTTP implementation, an instrumented application needs to expose the encoded format 
 as an endpoint with the HTTP server of it´s choice. 
 
-## ZMX Metrics in Prometheus 
+## ZIO Metrics in Prometheus 
 
-Most of the ZMX metrics have a direct representation in the Prometheus encoding. 
+Most of the ZIO metrics have a direct representation in the Prometheus encoding. 
 
 ### Counter
 
@@ -40,22 +40,22 @@ adjustGauge -1.2485836762095701 1623586224730
 A histogram is represented as a prometheus histogram. 
 
 ```
-# TYPE zmxHistogram histogram
-# HELP zmxHistogram 
-zmxHistogram{le="0.0"} 0.0 1623586224730
-zmxHistogram{le="10.0"} 8.0 1623586224730
-zmxHistogram{le="20.0"} 18.0 1623586224730
-zmxHistogram{le="30.0"} 30.0 1623586224730
-zmxHistogram{le="40.0"} 44.0 1623586224730
-zmxHistogram{le="50.0"} 51.0 1623586224730
-zmxHistogram{le="60.0"} 59.0 1623586224730
-zmxHistogram{le="70.0"} 65.0 1623586224730
-zmxHistogram{le="80.0"} 76.0 1623586224730
-zmxHistogram{le="90.0"} 88.0 1623586224730
-zmxHistogram{le="100.0"} 95.0 1623586224730
-zmxHistogram{le="+Inf"} 115.0 1623586224730
-zmxHistogram_sum 6828.578655207023 1623586224730
-zmxHistogram_count 115.0 1623586224730
+# TYPE myHistogram histogram
+# HELP myHistogram 
+myHistogram{le="0.0"} 0.0 1623586224730
+myHistogram{le="10.0"} 8.0 1623586224730
+myHistogram{le="20.0"} 18.0 1623586224730
+myHistogram{le="30.0"} 30.0 1623586224730
+myHistogram{le="40.0"} 44.0 1623586224730
+myHistogram{le="50.0"} 51.0 1623586224730
+myHistogram{le="60.0"} 59.0 1623586224730
+myHistogram{le="70.0"} 65.0 1623586224730
+myHistogram{le="80.0"} 76.0 1623586224730
+myHistogram{le="90.0"} 88.0 1623586224730
+myHistogram{le="100.0"} 95.0 1623586224730
+myHistogram{le="+Inf"} 115.0 1623586224730
+myHistogram_sum 6828.578655207023 1623586224730
+myHistogram_count 115.0 1623586224730
 ```
 
 ### Summary 
@@ -99,82 +99,90 @@ import zio.http._
 
 import zio._
 import zio.console._
-import zio.zmx.MetricSnapshot.{ Json, Prometheus }
-import zio.zmx.prometheus.PrometheusClient
+import zio.metrics.connectors.{prometheusLayer, publisherLayer}
 
-import zio.zmx.example.InstrumentedSample
+import sample.InstrumentedSample
 
 val instrumentedSample = new InstrumentedSample() {}
 ```
 
-ZMX provides a prometheus client that can be used to produce the prometheus encoded metric state 
-upon request. The state is encoded in the `Prometheus` case class and the single attribute of 
-type `String` holds the prometheus encoded metric state. 
+ZIO Metrics connector provides a prometheus client that can be used to produce the prometheus encoded metric state 
+upon request. The state is encoded in the `PrometheusPublisher` case class and the single attribute of 
+type `Ref[String]` holds the prometheus encoded metric state. 
 
-So, to retrieve the prometheus encoded state, the application can simply use 
+So, to retrieve the prometheus encoded state, the application can simply use `PrometheusPublisher#get` method:
 ```scala
-val encoded = PrometheusClient.snapshot
-val content = encoded.map(_.value)
+val encodedContent: UIO[String] = publisher.get
 ```
 
-In our example application we use [zio-http](https://github.com/dream11/zio-http) to serve the metrics. Other application might choose another HTTP server framework if required.
+In our example application we use [zio-http](https://github.com/zio/zio-http) to serve the metrics. Other application might choose another HTTP server framework if required.
 
 ```scala 
-private lazy val indexPage = HttpData.CompleteData(
-  Chunk
-    .fromArray("""<html>
-                  |<title>Simple Server</title>
-                  |<body>
-                  |<p><a href="/metrics">Metrics</a></p>
-                  |<p><a href="/json">Json</a></p>
-                  |</body
-                  |</html>""".stripMargin.getBytes)
-)
+private val metricsConfig = ZLayer.succeed(MetricsConfig(5.seconds))
 
-private lazy val static     =
-  Http.collect[Request] { case Method.GET -> Root => Response.http[Any, Nothing](content = indexPage) }
+private lazy val indexPage =
+  """<html>
+    |<title>Simple Server</title>
+    |<body>
+    |<p><a href="/prometheus/metrics">Prometheus Metrics</a></p>
+    |<p><a href="/insight/keys">Insight Metrics: Get all keys</a></p>
+    |</body
+    |</html>""".stripMargin
 
-private lazy val httpEffect = Http.collectM[Request] {
-  case Method.GET -> Root / "metrics" =>
-    PrometheusClient.snapshot.map { case Prometheus(value) => Response.text(value) }
-}
+private lazy val static =
+  Http.collect[Request] { case Method.GET -> Root => Response.html(Html.fromString(indexPage)) }
+
+private lazy val prometheusRouter =
+  Http
+    .collectZIO[Request] { case Method.GET -> Root / "prometheus" / "metrics" =>
+      ZIO.serviceWithZIO[PrometheusPublisher](_.get.map(Response.text))
+    }
 ```
 
 Now, using the HTTP server and the [instrumentation examples](instrumentation-examples.md) we can create an effect 
-that simply runs the sample effects with their instrumentation until the user presses any key. 
+that simply runs the sample effects with their instrumentation. And within a `ZIO.App` we can override the run method,
+which is now simply the execute method with a Prometheus client provided in it´s environment:
 
 ```scala
-private lazy val execute =
-  (for {
-    s <- (Server.install(static +++ httpEffect) *> ZIO.never).forkDaemon
-    p <- instrumentedSample.program.fork
-    _ <- putStrLn("Press Any Key to stop the demo server") *> getStrLn.catchAll(_ =>
-            ZIO.none
-          ) *> p.interrupt *> s.interrupt
-  } yield ExitCode.success).orDie
-```    
+  private val serverInstall =
+  Server.install(static ++ prometheusRouter)
 
-Finally, within a `ZIO.App` we can override the run method, which is now simply the execute 
-method with a Prometheus client provided in it´s environment:
+private lazy val runHttp = (serverInstall *> ZIO.never).forkDaemon
 
-```scala
-def run(args: List[String]): UIO[ExitCode] =
-  execute.provide(
-    PrometheusClient.live,
-    ServerConfig.default, 
+private lazy val serverConfig = ZLayer.succeed(Server.Config.default.port(bindPort))
+
+override def run: ZIO[Environment & ZIOAppArgs & Scope, Any, Any] = (for {
+  f <- runHttp
+  _ <- program
+  _ <- f.join
+} yield ())
+  .provide(
+    serverConfig,
     Server.live,
+
+    // This is the general config for all backends
+    metricsConfig,
+
+    // The prometheus reporting layer
+    prometheus.publisherLayer,
+    prometheus.prometheusLayer,
+
+    // Enable the ZIO internal metrics and the default JVM metricsConfig
+    // Do NOT forget the .unit for the JVM metrics layer
+    Runtime.enableRuntimeMetrics,
+    DefaultJvmMetrics.live.unit,
   )
 ```
 
 ## Running the prometheus example 
 
-Any of the examples can be run from a command line within the ZMX checkout directory with 
+Any of the examples can be run from a command line within the project checkout directory with 
 
 ```
-sbt examples/run
+sbt sampleApp/run
 ```
 
-Out of the choices, select the option corresponding to `zio.zmx.PrometheusInstrumentedApp`.
+Out of the choices, select the option corresponding to `sample.SamplePrometheusStatsDApp`.
 
 If everything works, we should be able to use a web browser to go to `http://localhost:8080/metrics` and should see something like 
 
@@ -212,7 +220,7 @@ encoded metrics.
 In addition, you need to download the Grafana binaries for your installation, start the Grafana server and configure 
 prometheus as a single data source. 
 
-Finally, you can import our example dashboard at `examples/prometheus/ZmxDashboard.json` and enjoy the results.
+Finally, you can import our example dashboard at `examples/prometheus/ZIOMetricsDashboard.json` and enjoy the results.
 
 > These steps are not intended to replace the Prometheus or Grafana documentation. Please refer to their web sites 
 > for guidelines towards a more sophisticated setup or an installation on different platforms. 
@@ -221,13 +229,13 @@ Finally, you can import our example dashboard at `examples/prometheus/ZmxDashboa
 
 ### Download and configure Prometheus 
 
-In the steps below the ZMX checkout directory will be referred to as `$ZMXDIR`.
+In the steps below the project checkout directory will be referred to as `$DIR`.
 
 1. [Download](https://github.com/prometheus/prometheus/releases/download/v2.23.0/prometheus-2.23.0.linux-amd64.tar.gz) prometheus
 1. Extract the downloaded archive to a directory of your choice, this will be referred to as `$PROMDIR`. 
 1. Within `$PROMDIR` execute 
    ```
-   ./prometheus --config.file $ZMXDIR/examples/prometheus/promcfg.yml
+   ./prometheus --config.file $DIR/examples/prometheus/promcfg.yml
    ```
    This will start the prometheus server which regularly polls the HTTP endpoint of the example above for its metrics.
 
@@ -239,14 +247,14 @@ In the steps below the ZMX checkout directory will be referred to as `$ZMXDIR`.
    ```
    ./bin/grafana-server
    ```
-   This will start a the Grafana server.
+   This will start a Grafana server.
 1. Now you should be able to login to Grafana at `http://localhost:3000' with the default user `admin` with the default 
    password `admin`. 
 
    Upon the first login you will be asked to change the default password. 
 1. Within the Grafana menu on the left hand side you will find `Manage Dashboards` within that page, select `Import`. 
 1. You can now either install a dashboard from grafana.com or use a text field to paste JSON. 
-1. Paste the content of `$ZMXDIR/examples/prometheus/ZmxDashboard.json` into the text field and select `Load`.
+1. Paste the content of `$DIR/examples/prometheus/ZIOMetricsDashboard.json` into the text field and select `Load`.
 
    This will import our dashboard example. 
 1. Now, under `Manage Dashboards` the just imported ZIO dashboard should be visible. 
@@ -256,4 +264,4 @@ In the steps below the ZMX checkout directory will be referred to as `$ZMXDIR`.
 
 Here is a screenshot of the Grafana dashboard produced with the setup above. 
 
-![A simple Grafana Dashboard](../img/ZIOZmx-Grafana.png)
+![A simple Grafana Dashboard](../img/ZIOMetrics-Grafana.png)

@@ -19,7 +19,7 @@ equivalent of a Prometheus summary.
 
 However, whenever the desired quantiles need to change, the config must be adjusted and the agent restarted.
 
-Therefore, the ZMX client maps the more complex metrics to a set of related gauges. This allows us to achieve
+Therefore, the ZIO Metrics Datadog client maps the more complex metrics to a set of related gauges. This allows us to achieve
 the same visualization without the need to adjust any of the agents config files.
 
 ### Counter
@@ -44,7 +44,7 @@ A histogram is reported as a datadog distribution whenever a new value is submit
 ignored in this case, as DataDog expects raw values to be recorded. 
 
 ```
-zmxHistogram:3|d
+myHistogram:3|d
 ```
 
 ### Summary
@@ -160,10 +160,10 @@ sudo socat -s -u udp-recv:8125 unix-sendto:/var/run/datadog/datadog.sock
 
 ### Run the Datadog example
 
-Now, the Datadog example can be started from within the ZMX checkout directory with
+Now, the Datadog example can be started from within the project checkout directory with
 
 ```
-sbt examples/run
+sbt sampleApp/run
 ```
 
 ### Visualize the metrics
@@ -171,13 +171,13 @@ sbt examples/run
 1. Log in to your datadog account
 1. From the menu on left hand side select `Dashboards/New Dashboard'
 1. In the upper right corner, click on the dashboard settings and select 'Import Dashboard JSON'
-1. From the filesystem, select `$ZMXDIR/examples/statsd/ZIOZMXmetrics.json`
+1. From the filesystem, select `$DIR/examples/statsd/ZIOMetrics.json`
 1. Confirm to override the dashboard configuration
 1. Save the just imported dashboard
-1. From the dashboard list select _ZIO ZMX metrics_
+1. From the dashboard list select _ZIO metrics_
 1. The Datadog dashboard is displayed
 
 ### Datadog dashboard
 
-![A simple Datadog Dashboard](../img/ZIOZmx-Datadog.png)
+![A simple Datadog Dashboard](../img/Datadog.png)
 
