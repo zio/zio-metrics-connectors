@@ -1,5 +1,5 @@
 {
-  "title": "ZIO ZMX metrics",
+  "title": "ZIO metrics",
   "description": "Top host-level metrics for ToonBox.             Clone this dashboard to add your own metrics.\n\n[Link to infrastructure list](/infrastructure?filter=ToonBox&hostname=ToonBox) (cloned)",
   "widgets": [
     {
@@ -113,7 +113,7 @@
     {
       "id": 7664808890792148,
       "definition": {
-        "title": "ZMX Histogram",
+        "title": "Histogram",
         "title_size": "16",
         "title_align": "left",
         "show_legend": false,
@@ -136,7 +136,7 @@
             "response_format": "timeseries",
             "queries": [
               {
-                "query": "avg:zmxHistogram{*} by {le}",
+                "query": "avg:myHistogram{*} by {le}",
                 "data_source": "metrics",
                 "name": "query1"
               }
@@ -162,7 +162,7 @@
     {
       "id": 1623337194050409,
       "definition": {
-        "title": "My ZMX Frequency",
+        "title": "My Frequency",
         "title_size": "16",
         "title_align": "left",
         "requests": [

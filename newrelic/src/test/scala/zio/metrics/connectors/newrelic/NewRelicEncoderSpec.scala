@@ -36,7 +36,7 @@ object NewRelicEncoderSpec extends ZIOSpecDefault with Generators {
           ) &&
           assert(jsonChunks.head)(hasFieldWithValue("value", Json.Num(state.count))) &&
           assert(jsonChunks.head)(hasFieldWithValue("interval.ms", Json.Num(timestamp.toEpochMilli - startedAt))) &&
-          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zmx.type", Json.Str("Counter")))
+          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zio.metric.type", Json.Str("Counter")))
         }
 
       }
@@ -52,7 +52,7 @@ object NewRelicEncoderSpec extends ZIOSpecDefault with Generators {
             NewRelicAssertions.hasCommonFields(pair.metricKey.name, "gauge", timestamp.toEpochMilli()),
           ) &&
           assert(jsonChunks.head)(hasFieldWithValue("value", Json.Num(state.value))) &&
-          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zmx.type", Json.Str("Gauge")))
+          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zio.metric.type", Json.Str("Gauge")))
         }
       }
     },
@@ -99,7 +99,7 @@ object NewRelicEncoderSpec extends ZIOSpecDefault with Generators {
           ) &&
           assert(jsonChunks.head)(hasFieldWithValue("value", Json.Num(expectedCount))) &&
           assert(jsonChunks.head)(hasFieldWithValue("interval.ms", Json.Num(timestamp.toEpochMilli - startedAt))) &&
-          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zmx.type", Json.Str("Counter")))
+          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zio.metric.type", Json.Str("Counter")))
         }
 
       }
@@ -115,7 +115,7 @@ object NewRelicEncoderSpec extends ZIOSpecDefault with Generators {
             NewRelicAssertions.hasCommonFields(pair.metricKey.name, "gauge", timestamp.toEpochMilli()),
           ) &&
           assert(jsonChunks.head)(hasFieldWithValue("value", Json.Num(newState.value))) &&
-          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zmx.type", Json.Str("Gauge")))
+          assert(jsonChunks.head)(NewRelicAssertions.hasAttribute("zio.metric.type", Json.Str("Gauge")))
         }
       }
     },

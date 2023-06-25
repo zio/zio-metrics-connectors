@@ -8,7 +8,7 @@ const sidebars = {
       collapsed: true,
       link: { type: "doc", id: "metrics/index" },
       items: [
-        "metrics/zmx-metric-reference",
+        "metrics/metric-reference",
         "metrics/statsd-client",
         "metrics/prometheus-client",
         "metrics/micrometer-connector",

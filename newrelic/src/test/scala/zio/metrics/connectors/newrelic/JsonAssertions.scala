@@ -64,7 +64,7 @@ object JsonAssertions {
           Json.Str(frequencyName),
         ) &&
         hasAttribute(
-          "zmx.type",
+          "zio.metric.type",
           Json.Str("Frequency"),
         )
 

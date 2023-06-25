@@ -11,12 +11,12 @@ import zio.metrics._
 In a normal StatsD setup we will find a StatsD agent with an open UDP port where applications send their 
 metrics to. The format of the metrics is defined in simple [datagrams](https://docs.datadoghq.com/developers/dogstatsd/datagram_shell/?tab=metrics). 
 
-With the StatsD client ZMX creates the relevant StatsD datagrams and sends them via UDP. 
+With the StatsD client creates the relevant StatsD datagrams and sends them via UDP. 
 
 > The instrumented code is exactly the as for the Prometheus instrumentation. The only difference is that 
 > another client is provided when the App is configured. 
 
-## ZMX metrics in StatsD
+## ZIO metrics in StatsD
 
 StatsD normally has its own definition how histograms and summaries are configured. In the default setup this 
 is defined in the config file of the statsd agent. Furthermore, a StatsD Histogram is more or less the
@@ -24,7 +24,7 @@ equivalent of a Prometheus summary.
 
 However, whenever the desired quantiles need to change, the config must be adjusted and the agent restarted. 
 
-Therefore, the ZMX client maps the more complex metrics to a set of related gauges. This allows us to achieve 
+Therefore, the client maps the more complex metrics to a set of related gauges. This allows us to achieve 
 the same visualization without the need to adjust any of the agents config files. 
 
 ### Counter 
@@ -48,18 +48,18 @@ A histogram is reported in a datagram built from related gauges. The individual 
 and the buckets are encoded in an extra label `le`. 
 
 ```
-zmxHistogram:0|g|#le:0.0
-zmxHistogram:3|g|#le:10.0
-zmxHistogram:6|g|#le:20.0
-zmxHistogram:10|g|#le:30.0
-zmxHistogram:13|g|#le:40.0
-zmxHistogram:16|g|#le:50.0
-zmxHistogram:19|g|#le:60.0
-zmxHistogram:22|g|#le:70.0
-zmxHistogram:24|g|#le:80.0
-zmxHistogram:27|g|#le:90.0
-zmxHistogram:29|g|#le:100.0
-zmxHistogram:37|g|#le:Inf
+myHistogram:0|g|#le:0.0
+myHistogram:3|g|#le:10.0
+myHistogram:6|g|#le:20.0
+myHistogram:10|g|#le:30.0
+myHistogram:13|g|#le:40.0
+myHistogram:16|g|#le:50.0
+myHistogram:19|g|#le:60.0
+myHistogram:22|g|#le:70.0
+myHistogram:24|g|#le:80.0
+myHistogram:27|g|#le:90.0
+myHistogram:29|g|#le:100.0
+myHistogram:37|g|#le:Inf
 ```
 
 ### Summary 
@@ -89,17 +89,16 @@ mySet:2|g|#token:myKey-11
 mySet:1|g|#token:myKey-12
 ```
 
-## The ZMX StatsD example
+## The ZIO Metrics StatsD example
 
 ```scala
 import java.net.InetSocketAddress
 
 import zio._
 import zio.console._
-import zio.zmx.MetricSnapshot.Prometheus
-import zio.zmx.statsd.StatsdClient
+import zio.metrics.connectors.statsd.statsdLayer
 
-import zio.zmx.example.InstrumentedSample
+import sample.InstrumentedSample
 
 val instrumentedSample = new InstrumentedSample() {}
 ```
@@ -122,15 +121,15 @@ Now, we can override the `run` method of our ZIO `App` and simply provide a `Sta
 
 ```scala 
 def run(args: List[String]): URIO[ZEnv, ExitCode] =
-  execute.provideCustomLayer(StatsdClient.default).orDie
+  execute.provideCustomLayer(statsdLayer).orDie
 ```
 
-> It is a listener because it listens to changes in the ZMX internal state and reports them 
+> It is a listener because it listens to changes in the ZIO Metrics internal state and reports them 
 > to StatsD by sending out appropriate datagrams. 
 
 ## A simple StatsD / Datadog setup 
 
-The following steps describe how to set up a ZIO ZMX application reporting to [Datadog](https://www.datadoghq.com/) using a free Datadog account 
+The following steps describe how to set up a ZIO Metrics application reporting to [Datadog](https://www.datadoghq.com/) using a free Datadog account 
 with limited functionality. The local setup is Windows 10 with WSL and Docker installed running Ubuntu 18.04 within WSL. 
 
 In principle the setup is as follows:
@@ -176,10 +175,10 @@ sudo socat -s -u udp-recv:8125 unix-sendto:/var/run/datadog/datadog.sock
 
 ### Run the Datadog example
 
-Now, the Datadog example can be started from within the ZMX checkout directory with 
+Now, the Datadog example can be started from within the project checkout directory with 
 
 ```
-sbt examples/run
+sbt sampleApp/run
 ```
 
 ### Visualize the metrics
@@ -187,13 +186,13 @@ sbt examples/run
 1. Log in to your datadog account 
 1. From the menu on left hand side select `Dashboards/New Dashboard'
 1. In the upper right corner, click on the dashboard settings and select 'Import Dashboard JSON' 
-1. From the filesystem, select `$ZMXDIR/examples/statsd/ZIOZMXmetrics.json`
+1. From the filesystem, select `$DIR/examples/statsd/ZIOMetrics.json`
 1. Confirm to override the dashboard configuration 
 1. Save the just imported dashboard 
-1. From the dashboard list select _ZIO ZMX metrics_
+1. From the dashboard list select _ZIO metrics_
 1. The Datadog dashboard is displayed
 
 ### Datadog dashboard 
 
-![A simple Datadog Dashboard](../img/ZIOZmx-Datadog.png)
+![A simple Datadog Dashboard](../img/Datadog.png)
 

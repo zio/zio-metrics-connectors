@@ -25,7 +25,7 @@ import zio.metrics.MetricState._
 import zio.metrics.connectors._
 
 object NewRelicEncoder {
-  private[newrelic] val frequencyTagName = "zmx.frequency.name"
+  private[newrelic] val frequencyTagName = "zio.frequency.name"
 }
 
 final case class NewRelicEncoder(startedAt: Instant) {
@@ -79,7 +79,7 @@ final case class NewRelicEncoder(startedAt: Instant) {
               metricKey,
               calculateIntervalMs(timestamp),
               timestamp,
-              Set(makeZmxTypeTag("Counter")),
+              Set(makeTypeTag("Counter")),
             ),
           )
         case (Histogram(buckets, count, min, max, sum), _)        =>
@@ -94,7 +94,7 @@ final case class NewRelicEncoder(startedAt: Instant) {
             timestamp,
           )
         case (Gauge(value), _)                                    =>
-          Chunk(encodeGauge(value, metricKey, timestamp, Set(makeZmxTypeTag("Gauge"))))
+          Chunk(encodeGauge(value, metricKey, timestamp, Set(makeTypeTag("Gauge"))))
       }
     }
 
@@ -146,7 +146,7 @@ final case class NewRelicEncoder(startedAt: Instant) {
 
     Chunk.fromIterable(deltas.map { case (frequencyName, (oldCount, newCount)) =>
       val tags: Set[(String, Json)] =
-        Set(NewRelicEncoder.frequencyTagName -> Json.Str(frequencyName), makeZmxTypeTag("Frequency"))
+        Set(NewRelicEncoder.frequencyTagName -> Json.Str(frequencyName), makeTypeTag("Frequency"))
       encodeCounter(oldCount.toDouble, newCount.toDouble, key, interval, timestamp, tags)
     })
 
@@ -173,11 +173,11 @@ final case class NewRelicEncoder(startedAt: Instant) {
     timestamp: Instant,
   ): Chunk[Json] = {
 
-    val zmxType = makeZmxTypeTag("Histogram")
+    val metricType = makeTypeTag("Histogram")
 
     val histogram = encodeCommon(key.name, "summary", timestamp) merge
       makeNewRelicSummary(count, sum, interval, min, max) merge
-      encodeAttributes(key.tags, Set(zmxType))
+      encodeAttributes(key.tags, Set(metricType))
 
     Chunk(histogram)
   }
@@ -190,14 +190,14 @@ final case class NewRelicEncoder(startedAt: Instant) {
     timestamp: Instant,
   ): Chunk[Json] = {
 
-    val zmxType  = makeZmxTypeTag("Summary")
-    val oldCount = oldSummary.fold(0L)(_.count)
-    val count    = (newSummary.count - oldCount).abs
-    val error    = newSummary.error
-    val min      = newSummary.min
-    val max      = newSummary.max
+    val metricType = makeTypeTag("Summary")
+    val oldCount   = oldSummary.fold(0L)(_.count)
+    val count      = (newSummary.count - oldCount).abs
+    val error      = newSummary.error
+    val min        = newSummary.min
+    val max        = newSummary.max
     // val quantiles = newSummary.quantiles
-    val sum      = newSummary.sum
+    val sum        = newSummary.sum
 
     // val quantilesUpdate  = oldSummary.map { oldSummary =>
     //   val value = sum - oldSummary.sum
@@ -205,7 +205,7 @@ final case class NewRelicEncoder(startedAt: Instant) {
 
     val summary = encodeCommon(key.name, "summary", timestamp) merge
       makeNewRelicSummary(count, sum, interval, min, max) merge
-      encodeAttributes(key.tags, Set(zmxType, "zmx.error.margin" -> Json.Num(error)))
+      encodeAttributes(key.tags, Set(metricType, "zio.error.margin" -> Json.Num(error)))
 
     Chunk(summary)
   }
@@ -222,7 +222,7 @@ final case class NewRelicEncoder(startedAt: Instant) {
     "interval.ms" -> Json.Num(intervalInMillis),
   )
 
-  private[connectors] def makeZmxTypeTag(zmxType: String): (String, Json) = "zmx.type" -> Json.Str(zmxType)
+  private[connectors] def makeTypeTag(metricType: String): (String, Json) = "zio.metric.type" -> Json.Str(metricType)
 
   private[connectors] def reservedWords = Chunk(
     "ago",
@@ -267,5 +267,5 @@ final case class NewRelicEncoder(startedAt: Instant) {
   )
 
   private[connectors] def sanitzeLabelName(name: String): String =
-    if (!name.startsWith("zmx") && reservedWords.contains(name.toLowerCase())) s"`$name`" else name
+    if (!name.startsWith("zio") && reservedWords.contains(name.toLowerCase())) s"`$name`" else name
 }

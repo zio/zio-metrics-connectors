@@ -23,7 +23,7 @@ Prometheus, and Jaeger and so on.
 
 ### 2. Real-time Metrics Updates
 
-By leveraging the low-level integration with the ZMX Metrics core client listener, the module provides immediate
+By leveraging the low-level integration with the ZIO Metrics core client listener, the module provides immediate
 updates to Micrometer whenever metric changes occur within the ZIO application. This real-time synchronization
 ensures that the metrics reported by Micrometer accurately reflect the current state of the application, enabling
 timely monitoring and analysis.
@@ -59,7 +59,7 @@ developers to focus on their core business logic while staying at the forefront 
 
 3. Provide Micrometer and its backend Layer to your main ZIO effect
 
-   `zio-metrics-micrometer` gives you `micrometer.micrometerLayer` which initializes a bridge between ZMX and
+   `zio-metrics-micrometer` gives you `micrometer.micrometerLayer` which initializes a bridge between ZIO Metrics and
    Micrometer.
    You should also provide a layer with a backend for micrometer.
 
