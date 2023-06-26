@@ -25,20 +25,22 @@ package object datadog {
       } yield (),
     )
 
+  private def eventFilter(config: DatadogConfig): MetricEvent => Boolean =
+    if (config.sendUnchanged) {
+      !_.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]
+    } else {
+      case MetricEvent.Unchanged(_, _, _) => false
+      case e                              => !e.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]
+    }
+
   private[connectors] def datadogHandler(
     client: StatsdClient,
     config: DatadogConfig,
   ): Iterable[MetricEvent] => UIO[Unit] = events => {
-    val evtFilter: MetricEvent => Boolean = if (config.sendUnchanged) { _ => true }
-    else {
-      case MetricEvent.Unchanged(_, _, _) => false
-      case _                              => true
-    }
-
     val encoder = DatadogEncoder.encoder(config)
 
     val send = ZIO
-      .foreachDiscard(events.filter(evtFilter))(evt =>
+      .foreachDiscard(events.filter(eventFilter(config)))(evt =>
         for {
           encoded <- encoder(evt).catchAll(_ => ZIO.succeed(Chunk.empty))
           _       <- ZIO.when(encoded.nonEmpty)(ZIO.attempt(client.send(encoded)))
