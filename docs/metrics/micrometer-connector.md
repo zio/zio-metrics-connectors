@@ -44,7 +44,7 @@ developers to focus on their core business logic while staying at the forefront 
    In your project's build configuration, add the following dependency to import the ZIO Metrics Micrometer module:
 
 ```
-   libraryDependencies += "dev.zio" %%% "zio-metrics-micrometer" % latest
+   libraryDependencies += "dev.zio" %% "zio-metrics-connectors-micrometer" % latest
 ```
 
 2. Choose Micrometer Backend
@@ -59,7 +59,7 @@ developers to focus on their core business logic while staying at the forefront 
 
 3. Provide Micrometer and its backend Layer to your main ZIO effect
 
-   `zio-metrics-micrometer` gives you `micrometer.micrometerLayer` which initializes a bridge between ZIO Metrics and
+   `zio-metrics-connectors-micrometer` gives you `micrometer.micrometerLayer` which initializes a bridge between ZIO Metrics and
    Micrometer.
    You should also provide a layer with a backend for micrometer.
 
