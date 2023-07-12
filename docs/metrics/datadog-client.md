@@ -1,5 +1,5 @@
 ---
-id: metrics_datadog
+id: datadog-client
 title: "Datadog Client"
 ---
 
