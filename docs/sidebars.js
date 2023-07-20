@@ -10,6 +10,7 @@ const sidebars = {
       items: [
         "metrics/metric-reference",
         "metrics/statsd-client",
+        "metrics/datadog-client",
         "metrics/prometheus-client",
         "metrics/micrometer-connector",
         "metrics/instrumentation-examples",
