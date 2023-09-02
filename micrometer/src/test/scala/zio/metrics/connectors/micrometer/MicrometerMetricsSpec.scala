@@ -65,8 +65,9 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
         resultSummary.count() == testData.size.toLong,
         resultSummary.total() == testData.sum,
         resultSummary.max() == testData.max,
-        resultSummary.histogramCounts().toSeq == buckets.values
-          .map(bound => new CountAtBucket(bound, testData.count(_ <= bound))),
+        resultSummary.histogramCounts().toList == buckets.values
+          .map(bound => new CountAtBucket(bound, testData.count(_ <= bound).toDouble))
+          .toList,
       )
     }
   }
