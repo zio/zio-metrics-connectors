@@ -4,9 +4,9 @@ import java.time.Instant
 
 import scala.jdk.CollectionConverters._
 
-import zio.{durationInt, Chunk, ZIO, ZLayer}
+import zio.{durationInt, Chunk, Scope, ZIO, ZLayer}
 import zio.metrics.{Metric, MetricKey, MetricKeyType}
-import zio.test.{assertTrue, ZIOSpecDefault}
+import zio.test.{assertTrue, Spec, TestEnvironment, ZIOSpecDefault}
 import zio.test.TestAspect.{timed, timeoutWarning}
 
 import io.micrometer.core.instrument.MeterRegistry
@@ -15,17 +15,19 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 
 object MicrometerMetricsSpec extends ZIOSpecDefault {
 
-  override def spec = suite("The Micrometer registry should")(
-    testCounter,
-    testGauge,
-    testHistogram,
-    testSummary,
-    testFrequency,
-  ).provide(
-    micrometerLayer,
-    ZLayer.succeed(new SimpleMeterRegistry()),
-    ZLayer.succeed(MicrometerConfig.default),
-  ) @@ timed @@ timeoutWarning(60.seconds)
+  override def spec: Spec[TestEnvironment with Scope, Any] =
+    suite("The Micrometer registry should")(
+      testCounter,
+      testGauge,
+      testHistogram,
+      testSummary,
+      testFrequency,
+      testDescription,
+    ).provide(
+      micrometerLayer,
+      ZLayer.succeed(new SimpleMeterRegistry()),
+      ZLayer.succeed(MicrometerConfig.default),
+    ) @@ timed @@ timeoutWarning(60.seconds)
 
   private def testMetric[Type <: MetricKeyType](
     key: MetricKey[Type],
@@ -57,17 +59,17 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
     val testData = Seq(0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5)
     val buckets  = MetricKeyType.Histogram.Boundaries.linear(1, 1, 3)
 
-    testMetric(MetricKey.histogram(name, buckets))(testData).map(searchResult =>
-      assertTrue {
-        val resultSummary = searchResult.summary().takeSnapshot()
-        resultSummary.count() == testData.size &&
-        resultSummary.total() == testData.sum &&
-        resultSummary.max() == testData.max &&
-        resultSummary.histogramCounts().toSeq == buckets.values
-          .map(bound => new CountAtBucket(bound, testData.count(_ <= bound)))
-          .toSeq
-      },
-    )
+    testMetric(MetricKey.histogram(name, buckets))(testData).map { searchResult =>
+      val resultSummary = searchResult.summary().takeSnapshot()
+      assertTrue(
+        resultSummary.count() == testData.size.toLong,
+        resultSummary.total() == testData.sum,
+        resultSummary.max() == testData.max,
+        resultSummary.histogramCounts().toList == buckets.values
+          .map(bound => new CountAtBucket(bound, testData.count(_ <= bound).toDouble))
+          .toList,
+      )
+    }
   }
 
   private val testSummary = test("catch zio summary updates") {
@@ -75,12 +77,12 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
     val now         = Instant.now()
     val testData    = Chunk.fromIterable(1 to 1000).map(i => i.toDouble -> now)
     val percentiles = Chunk(0.1, 0.5, 0.9)
-    testMetric(MetricKey.summary(name, 1.day, 100, 0.03d, percentiles))(testData).map(searchResult =>
-      assertTrue {
-        val resultSummary = searchResult.summary().takeSnapshot()
-        resultSummary.count() == testData.size &&
-        resultSummary.total() == testData.map(_._1).sum &&
-        resultSummary.max() == testData.map(_._1).max &&
+    testMetric(MetricKey.summary(name, 1.day, 100, 0.03d, percentiles))(testData).map { searchResult =>
+      val resultSummary = searchResult.summary().takeSnapshot()
+      assertTrue(
+        resultSummary.count() == testData.size.toLong,
+        resultSummary.total() == testData.map(_._1).sum,
+        resultSummary.max() == testData.map(_._1).max,
         resultSummary
           .percentileValues()
           .toSeq
@@ -94,9 +96,9 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
             0.1 -> 100,
             0.5 -> 500,
             0.9 -> 900,
-          )
-      },
-    )
+          ),
+      )
+    }
   }
 
   private val testFrequency = test("catch zio frequency updates") {
@@ -110,8 +112,32 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
 
     testMetric(MetricKey.frequency(name))(testData).map { searchResult =>
       val bucketCounters = searchResult.counters().asScala
-      assertTrue(checkBucketCounter(bucketCounters, "Sample1") && checkBucketCounter(bucketCounters, "Sample2"))
+      assertTrue(checkBucketCounter(bucketCounters, "Sample1"), checkBucketCounter(bucketCounters, "Sample2"))
     }
+  }
+
+  private val testDescription = test("handle description") {
+    val description = "testDescription"
+
+    for {
+      gauge     <- testMetric(MetricKey.gauge("testDescGauge", description))(Seq(0)).map(_.gauge())
+      counter   <- testMetric(MetricKey.counter("testDescCounter", description))(Seq(0)).map(_.counter())
+      histogram <-
+        testMetric(
+          MetricKey.histogram("testDescHistogram", description, MetricKeyType.Histogram.Boundaries.fromChunk(Chunk(1))),
+        )(Seq(0)).map(_.summary())
+      summary   <- testMetric(
+                     MetricKey.summary("testDescSummary", description, 1.day, 100, 0.03d, Chunk(1)),
+                   )(Seq(0d -> Instant.now())).map(_.summary())
+      frequency <- testMetric(MetricKey.frequency("testDescFrequency", description))(Seq("str"))
+                     .map(_.counter())
+    } yield assertTrue(
+      gauge.getId.getDescription == description,
+      counter.getId.getDescription == description,
+      histogram.getId.getDescription == description,
+      summary.getId.getDescription == description,
+      frequency.getId.getDescription == description,
+    )
   }
 
 }

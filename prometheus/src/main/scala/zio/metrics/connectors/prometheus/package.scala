@@ -10,18 +10,17 @@ package object prometheus {
   lazy val prometheusLayer: ZLayer[MetricsConfig & PrometheusPublisher, Nothing, Unit] =
     ZLayer.fromZIO(
       for {
-        conf <- ZIO.service[MetricsConfig]
-        pub  <- ZIO.service[PrometheusPublisher]
-        _    <- MetricsClient.make(prometheusHandler(pub, conf))
+        pub <- ZIO.service[PrometheusPublisher]
+        _   <- MetricsClient.make(prometheusHandler(pub))
       } yield (),
     )
 
-  private def prometheusHandler(clt: PrometheusPublisher, config: MetricsConfig): Iterable[MetricEvent] => UIO[Unit] =
+  private def prometheusHandler(clt: PrometheusPublisher): Iterable[MetricEvent] => UIO[Unit] =
     events =>
       for {
         old            <- clt.get
         reportComplete <- ZIO.foreach(Chunk.fromIterable(events)) { e =>
-                            PrometheusEncoder.encode(e, descriptionKey = Some(config.descriptionKey)).catchAll { _ =>
+                            PrometheusEncoder.encode(e).catchAll { _ =>
                               ZIO.succeed(Chunk.empty)
                             }
                           }

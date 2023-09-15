@@ -8,14 +8,13 @@ import zio.metrics.connectors._
 
 case object PrometheusEncoder {
 
-  def encode(event: MetricEvent, descriptionKey: Option[String] = None): ZIO[Any, Throwable, Chunk[String]] =
-    ZIO.attempt(encodeMetric(event.metricKey, event.current, event.timestamp, descriptionKey))
+  def encode(event: MetricEvent): ZIO[Any, Throwable, Chunk[String]] =
+    ZIO.attempt(encodeMetric(event.metricKey, event.current, event.timestamp))
 
   private def encodeMetric(
     key: MetricKey.Untyped,
     state: MetricState.Untyped,
     timestamp: Instant,
-    descriptionKey: Option[String],
   ): Chunk[String] = {
     val name = key.name.replaceAll("-", "_").trim
 
@@ -29,7 +28,7 @@ case object PrometheusEncoder {
     }
 
     val encodeHead = {
-      val description = descriptionKey.flatMap(d => key.tags.find(_.key == d)).fold("")(l => s" ${l.value}")
+      val description = key.description.fold("")(d => s" $d")
       Chunk(
         s"# TYPE $name $prometheusType",
         s"# HELP $name$description",
@@ -39,20 +38,20 @@ case object PrometheusEncoder {
     val encodeTimestamp = s"${timestamp.toEpochMilli}"
 
     def encodeLabels(allLabels: Set[MetricLabel]) =
-      if (allLabels.isEmpty) new StringBuilder("")
-      else
-        allLabels
-          .foldLeft(new StringBuilder(256).append("{")) { case (sb, l) =>
-            sb.append(l.key).append("=\"").append(l.value).append("\",")
-          }
-          .append("}")
+      (
+        if (allLabels.isEmpty) new StringBuilder("")
+        else
+          allLabels
+            .foldLeft(new StringBuilder(256).append("{")) { case (sb, l) =>
+              sb.append(l.key).append("=\"").append(l.value).append("\",")
+            }
+            .append("}")
+      ).result()
 
-    val tagsWithoutDescription = descriptionKey.fold(key.tags)(d => key.tags.filter(_.key != d))
-
-    val baseLabels = encodeLabels(tagsWithoutDescription)
+    val baseLabels = encodeLabels(key.tags)
 
     def encodeExtraLabels(extraLabels: Set[MetricLabel]) =
-      if (extraLabels.isEmpty) baseLabels else encodeLabels(tagsWithoutDescription ++ extraLabels)
+      if (extraLabels.isEmpty) baseLabels else encodeLabels(key.tags ++ extraLabels)
 
     def encodeCounter(c: MetricState.Counter, extraLabels: MetricLabel*): String =
       s"$name${encodeExtraLabels(extraLabels.toSet)} ${c.count} $encodeTimestamp"

@@ -61,18 +61,18 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
   )
 
   private def helpString(key: MetricKey.Untyped) =
-    key.tags.find(_.key == descriptionKey).fold("")(d => s" ${d.value}")
+    key.description.fold("")(d => s" $d")
 
   private def labelString(key: MetricKey.Untyped, extra: (String, String)*) = {
-    val tags = key.tags.filter(_.key != descriptionKey) ++ extra.map(x => MetricLabel(x._1, x._2)).toSet
+    val tags = key.tags ++ extra.map(x => MetricLabel(x._1, x._2)).toSet
     if (tags.isEmpty) ""
     else tags.toList.map(l => s"""${l.key}="${l.value}",""").mkString("{", "", "}")
   }
 
   private val encodeCounter = test("Encode a Counter")(check(genCounter) { case (pair, state) =>
     for {
-      timestamp <- ZIO.clockWith(_.instant)
-      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp), Some(descriptionKey))
+      timestamp <- Clock.instant
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
       name       = pair.metricKey.name
       help       = helpString(pair.metricKey)
       labels     = labelString(pair.metricKey)
@@ -88,7 +88,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
   private val encodeGauge = test("Encode a Gauge")(check(genGauge) { case (pair, state) =>
     for {
       timestamp <- ZIO.clockWith(_.instant)
-      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp), Some(descriptionKey))
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
       name       = pair.metricKey.name
       help       = helpString(pair.metricKey)
       labels     = labelString(pair.metricKey)
@@ -104,7 +104,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
   private val encodeFrequency = test("Encode a Frequency")(check(genFrequency1) { case (pair, state) =>
     for {
       timestamp <- ZIO.clockWith(_.instant)
-      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp), Some(descriptionKey))
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
       name       = pair.metricKey.name
       help       = helpString(pair.metricKey)
       expected   = Chunk.fromIterable(state.occurrences).flatMap { case (k, v) =>
@@ -121,7 +121,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
   private val encodeSummary = test("Encode a Summary")(check(genSummary) { case (pair, state) =>
     for {
       timestamp <- ZIO.clockWith(_.instant)
-      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp), Some(descriptionKey))
+      text      <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
       name       = pair.metricKey.name
       epochMilli = timestamp.toEpochMilli
       help       = helpString(pair.metricKey)
@@ -145,7 +145,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
   private val encodeHistogram = test("Encode a Histogram")(check(genHistogram) { case (pair, state) =>
     for {
       timestamp    <- ZIO.clockWith(_.instant)
-      text         <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp), Some(descriptionKey))
+      text         <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
       name          = pair.metricKey.name
       epochMilli    = timestamp.toEpochMilli
       help          = helpString(pair.metricKey)

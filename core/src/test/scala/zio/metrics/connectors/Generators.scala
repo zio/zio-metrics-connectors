@@ -13,20 +13,19 @@ trait Generators {
 
   val nonEmptyString: Gen[Any, String] = Gen.alphaNumericString.filter(_.nonEmpty)
 
-  val descriptionKey = "testDescription"
-
   val genLabel: Gen[Any, MetricLabel] =
-    Gen.oneOf(Gen.const(descriptionKey), Gen.alphaNumericString).zipWith(Gen.alphaNumericString)(MetricLabel.apply)
+    Gen.alphaNumericString.zipWith(Gen.alphaNumericString)(MetricLabel.apply)
 
   val genTags: Gen[Any, Set[MetricLabel]] = Gen.setOf(genLabel)
 
   val genCounter: Gen[Any, (MetricPair.Untyped, MetricState.Counter)] = for {
-    name  <- nonEmptyString
-    tags  <- genTags
-    count <- Gen.double(1, 100)
+    name        <- nonEmptyString
+    description <- nonEmptyString
+    tags        <- genTags
+    count       <- Gen.double(1, 100)
   } yield {
     val state = MetricState.Counter(count)
-    (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.counter(name).tagged(tags), state)), state)
+    (Unsafe.unsafe(implicit u => MetricPair.make(MetricKey.counter(name, description).tagged(tags), state)), state)
   }
 
   def genCounterNamed(
