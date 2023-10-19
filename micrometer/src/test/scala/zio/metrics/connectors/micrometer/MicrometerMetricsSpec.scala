@@ -1,11 +1,12 @@
 package zio.metrics.connectors.micrometer
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import scala.jdk.CollectionConverters._
 
 import zio.{durationInt, Chunk, Scope, ZIO, ZLayer}
-import zio.metrics.{Metric, MetricKey, MetricKeyType}
+import zio.metrics.{Metric, MetricKey, MetricKeyType, MetricLabel}
 import zio.test.{assertTrue, Spec, TestEnvironment, ZIOSpecDefault}
 import zio.test.TestAspect.{timed, timeoutWarning}
 
@@ -20,6 +21,7 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
       testCounter,
       testGauge,
       testHistogram,
+      testTimer,
       testSummary,
       testFrequency,
       testDescription,
@@ -60,16 +62,41 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
     val buckets  = MetricKeyType.Histogram.Boundaries.linear(1, 1, 3)
 
     testMetric(MetricKey.histogram(name, buckets))(testData).map { searchResult =>
-      val resultSummary = searchResult.summary().takeSnapshot()
+      val summary  = searchResult.summary()
+      val snapshot = summary.takeSnapshot()
       assertTrue(
-        resultSummary.count() == testData.size.toLong,
-        resultSummary.total() == testData.sum,
-        resultSummary.max() == testData.max,
-        resultSummary.histogramCounts().toList == buckets.values
+        summary.getId.getBaseUnit eq null,
+        snapshot.count() == testData.size.toLong,
+        snapshot.total() == testData.sum,
+        snapshot.max() == testData.max,
+        snapshot.histogramCounts().toList == buckets.values
           .map(bound => new CountAtBucket(bound, testData.count(_ <= bound).toDouble))
           .toList,
       )
     }
+  }
+
+  private val testTimer = test("catch zio timer updates") {
+    val name     = "testTimer"
+    val testData = Chunk(1.0, 2.0, 3.0, 4.0, 5.0)
+    val buckets  = MetricKeyType.Histogram.Boundaries.linear(1, 1, 3)
+    val tags     = Set(MetricLabel("key", "value"))
+
+    for {
+      _       <- ZIO.foreachDiscard(testData)(d =>
+                   ZIO.succeed(d.toInt.seconds) @@ Metric.timer(name, ChronoUnit.SECONDS, buckets.values).tagged(tags),
+                 )
+      summary <- ZIO.serviceWith[MeterRegistry](_.get(name).tags(micrometerTags(tags).asJava).summary())
+      snapshot = summary.takeSnapshot()
+    } yield assertTrue(
+      summary.getId.getBaseUnit == "seconds",
+      snapshot.count() == testData.size.toLong,
+      snapshot.total() == testData.sum,
+      snapshot.max() == testData.max,
+      snapshot.histogramCounts().toList == buckets.values
+        .map(bound => new CountAtBucket(bound, testData.count(_ <= bound).toDouble))
+        .toList,
+    )
   }
 
   private val testSummary = test("catch zio summary updates") {
