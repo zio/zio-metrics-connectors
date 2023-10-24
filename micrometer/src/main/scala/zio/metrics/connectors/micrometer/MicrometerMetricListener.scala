@@ -7,7 +7,7 @@ import java.util.function.{Function => JFunction}
 import scala.jdk.CollectionConverters._
 
 import zio.{Unsafe, URIO, ZIO}
-import zio.metrics.{MetricKey, MetricKeyType, MetricListener}
+import zio.metrics.{MetricKey, MetricKeyType, MetricLabel, MetricListener}
 import zio.metrics.connectors.micrometer.internal.AtomicDouble
 
 import io.micrometer.core.instrument.{Counter, DistributionSummary, Gauge => MGauge, MeterRegistry, Tag}
@@ -36,14 +36,18 @@ private[micrometer] class MicrometerMetricListener(
     key: MetricKey[MetricKeyType.Histogram],
     value: Double,
   )(implicit unsafe: Unsafe,
-  ): Unit =
+  ): Unit = {
+    val baseUnit = key.tags.find(_.key == "time_unit")
+    val tags     = key.tags -- baseUnit
     DistributionSummary
       .builder(key.name)
-      .tags(micrometerTags(key.tags).asJava)
+      .tags(micrometerTags(tags).asJava)
+      .baseUnit(baseUnit.map(_.value).orNull)
       .description(key.description.orNull)
       .serviceLevelObjectives(key.keyType.boundaries.values.filter(_ > 0): _*) // micrometer prohibits <= 0 slo values
       .register(meterRegistry)
       .record(value)
+  }
 
   override def updateGauge(key: MetricKey[MetricKeyType.Gauge], value: Double)(implicit unsafe: Unsafe): Unit =
     getOrCreateGaugeRef(key).set(value)
