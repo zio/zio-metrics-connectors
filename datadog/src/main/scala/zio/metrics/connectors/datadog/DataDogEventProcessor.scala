@@ -24,7 +24,8 @@ object DataDogEventProcessor {
                              val items  = queue.pollUpTo(datadogConfig.maxBatchedMetrics)
                              val values = groupMap(items)(_._1)(_._2)
                              values.foreach { case (key, value) =>
-                               val encoded = encoder(key, NonEmptyChunk.fromChunk(value).get)
+                               val updatedKey = datadogConfig.entityId.fold(key)(key.tagged(entityTagName, _))
+                               val encoded    = encoder(updatedKey, NonEmptyChunk.fromChunk(value).get)
                                client.send(encoded)
                              }
                            }
@@ -49,4 +50,6 @@ object DataDogEventProcessor {
     }
     result
   }
+
+  private val entityTagName: String = "dd.internal.entity_id"
 }

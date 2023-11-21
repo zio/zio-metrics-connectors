@@ -6,6 +6,7 @@ import zio.{ULayer, ZLayer}
 
 /**
  * Datadog Specific configuration
+ *
  * @param host
  *  Agent host name
  * @param port
@@ -20,6 +21,8 @@ import zio.{ULayer, ZLayer}
  *  The maximum number of metrics stored in the queue. This affects memory usage
  * @param containerId
  *  An optional docker container ID
+ * @param entityId
+ *  An optional entity ID value used with an internal tag for tracking client entity
  */
 final case class DatadogConfig(
   host: String,
@@ -28,6 +31,7 @@ final case class DatadogConfig(
   maxBatchedMetrics: Int = 10,
   maxQueueSize: Int = 100000,
   containerId: Option[String] = None,
+  entityId: Option[String] = None,
   sendUnchanged: Boolean = false)
 
 object DatadogConfig {

@@ -6,7 +6,7 @@ import zio._
 import zio.metrics._
 import zio.metrics.connectors._
 
-case object StatsdEncoder {
+case class StatsdEncoder(constantTags: Option[String]) {
 
   private val BUF_PER_METRIC = 128
 
@@ -96,7 +96,7 @@ case object StatsdEncoder {
     tags: Set[MetricLabel],
     extraTags: MetricLabel*,
   ): StringBuilder = {
-    val tagBuf      = new StringBuilder()
+    val tagBuf      = constantTags.fold(new StringBuilder())(new StringBuilder(_))
     val withTags    = appendTags(tagBuf, tags)
     val withAllTags = appendTags(withTags, extraTags)
 
@@ -130,3 +130,5 @@ case object StatsdEncoder {
   private lazy val format = new DecimalFormat("0.################")
 
 }
+
+object StatsdEncoder extends StatsdEncoder(None)

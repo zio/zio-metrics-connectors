@@ -10,7 +10,7 @@ case object DatadogEncoder {
   private val BUF_PER_METRIC = 128
 
   def encoder(config: DatadogConfig): MetricEvent => Task[Chunk[Byte]] = {
-    val base            = StatsdEncoder.encodeEvent _
+    val base            = makeStatsdEncoder(config).encodeEvent _
     val withContainerId = config.containerId match {
       case Some(cid) =>
         val s = cidString(cid)
@@ -27,7 +27,7 @@ case object DatadogEncoder {
 
     def encodeHistogramValues(key: MetricKey[MetricKeyType.Histogram], values: NonEmptyChunk[Double]): StringBuilder = {
       val result = new StringBuilder(BUF_PER_METRIC)
-      StatsdEncoder.appendMetric(result, key.name, values, "d", key.tags)
+      makeStatsdEncoder(config).appendMetric(result, key.name, values, "d", key.tags)
     }
 
     val base            = encodeHistogramValues _
@@ -40,6 +40,9 @@ case object DatadogEncoder {
     }
     (key, values) => Chunk.fromArray(withContainerId(key, values).toString().getBytes())
   }
+
+  private def makeStatsdEncoder(config: DatadogConfig): StatsdEncoder =
+    StatsdEncoder(config.entityId.map(eid => s"dd.internal.entity_id:$eid"))
 
   private def cidString(cid: String) = s"|c:$cid"
 }
