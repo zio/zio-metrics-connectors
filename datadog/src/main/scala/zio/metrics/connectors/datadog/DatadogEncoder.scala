@@ -9,16 +9,8 @@ case object DatadogEncoder {
 
   private val BUF_PER_METRIC = 128
 
-  def encoder(config: DatadogConfig): MetricEvent => Task[Chunk[Byte]] = {
-    val base            = StatsdEncoder.encodeEvent _
-    val withContainerId = config.containerId match {
-      case Some(cid) =>
-        val s = cidString(cid)
-        (event: MetricEvent) => base(event).append(s)
-      case None      =>
-        base
-    }
-    event => ZIO.attempt(Chunk.fromArray(withContainerId(event).toString().getBytes()))
+  def encoder(config: DatadogConfig): MetricEvent => Task[Chunk[Byte]] = { event =>
+    ZIO.attempt(Chunk.fromArray(addContextTags(StatsdEncoder.encodeEvent(event), config).toString().getBytes()))
   }
 
   def histogramEncoder(
@@ -30,16 +22,22 @@ case object DatadogEncoder {
       StatsdEncoder.appendMetric(result, key.name, values, "d", key.tags)
     }
 
-    val base            = encodeHistogramValues _
+    (key, values) => Chunk.fromArray(addContextTags(encodeHistogramValues(key, values), config).toString().getBytes())
+  }
+
+  private def addContextTags(s: StringBuilder, config: DatadogConfig): StringBuilder = {
     val withContainerId = config.containerId match {
-      case Some(cid) =>
-        val s = cidString(cid)
-        (key: MetricKey[MetricKeyType.Histogram], values: NonEmptyChunk[Double]) => base(key, values).append(s)
-      case None      =>
-        base
+      case Some(cid) => s.append(cidString(cid))
+      case None      => s
     }
-    (key, values) => Chunk.fromArray(withContainerId(key, values).toString().getBytes())
+    val withEntityId    = config.entityId match {
+      case Some(eid) => withContainerId.append(eidString(eid))
+      case None      => withContainerId
+    }
+    withEntityId
   }
 
   private def cidString(cid: String) = s"|c:$cid"
+
+  private def eidString(eid: String) = s"|dd.internal.entity_id:$eid"
 }
