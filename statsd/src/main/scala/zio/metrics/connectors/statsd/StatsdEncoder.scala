@@ -6,7 +6,7 @@ import zio._
 import zio.metrics._
 import zio.metrics.connectors._
 
-case class StatsdEncoder(constantTags: List[MetricLabel]) {
+case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String]) {
 
   private val BUF_PER_METRIC = 128
 
@@ -120,9 +120,11 @@ case class StatsdEncoder(constantTags: List[MetricLabel]) {
       .append("|")
       .append(metricType)
 
-    if (withAllTags.nonEmpty) {
+    val result = if (withAllTags.nonEmpty) {
       withMetric.append("|#").append(tagBuf)
     } else withMetric
+
+    suffix.fold(result)(result.append)
   }
 
   private def appendTag(buf: StringBuilder, tag: MetricLabel): StringBuilder = {
@@ -137,4 +139,4 @@ case class StatsdEncoder(constantTags: List[MetricLabel]) {
 
 }
 
-object StatsdEncoder extends StatsdEncoder(Nil)
+object StatsdEncoder extends StatsdEncoder(Nil, None)
