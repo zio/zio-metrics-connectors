@@ -42,7 +42,7 @@ case object DatadogEncoder {
   }
 
   private def makeStatsdEncoder(config: DatadogConfig): StatsdEncoder =
-    StatsdEncoder(config.entityId.map(eid => s"dd.internal.entity_id:$eid"))
+    StatsdEncoder(config.entityId.map(eid => MetricLabel("dd.internal.entity_id", eid)).toList)
 
   private def cidString(cid: String) = s"|c:$cid"
 }
