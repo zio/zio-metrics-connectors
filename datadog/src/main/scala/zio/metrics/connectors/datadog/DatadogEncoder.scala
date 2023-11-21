@@ -24,10 +24,11 @@ case object DatadogEncoder {
   def histogramEncoder(
     config: DatadogConfig,
   ): (MetricKey[MetricKeyType.Histogram], NonEmptyChunk[Double]) => Chunk[Byte] = {
+    val encoder = makeStatsdEncoder(config)
 
     def encodeHistogramValues(key: MetricKey[MetricKeyType.Histogram], values: NonEmptyChunk[Double]): StringBuilder = {
       val result = new StringBuilder(BUF_PER_METRIC)
-      makeStatsdEncoder(config).appendMetric(result, key.name, values, "d", key.tags)
+      encoder.appendMetric(result, key.name, values, "d", key.tags)
     }
 
     val base            = encodeHistogramValues _
