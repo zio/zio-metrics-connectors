@@ -26,15 +26,15 @@ case object DatadogEncoder {
   }
 
   private def addContextTags(s: StringBuilder, config: DatadogConfig): StringBuilder = {
+    val withEntityId    = config.entityId match {
+      case Some(eid) => s.append(eidString(eid))
+      case None      => s
+    }
     val withContainerId = config.containerId match {
       case Some(cid) => s.append(cidString(cid))
       case None      => s
     }
-    val withEntityId    = config.entityId match {
-      case Some(eid) => withContainerId.append(eidString(eid))
-      case None      => withContainerId
-    }
-    withEntityId
+    withContainerId
   }
 
   private def cidString(cid: String) = s"|c:$cid"
