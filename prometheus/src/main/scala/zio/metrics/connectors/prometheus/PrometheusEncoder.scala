@@ -16,7 +16,7 @@ case object PrometheusEncoder {
     state: MetricState.Untyped,
     timestamp: Instant,
   ): Chunk[String] = {
-    val name = key.name.replaceAll("-", "_").trim
+    val name = key.name.replaceAll("[- \\.]", "_").trim
 
     // The header required for all Prometheus metrics
     val prometheusType = state match {
