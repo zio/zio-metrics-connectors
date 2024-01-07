@@ -7,7 +7,7 @@ import java.util.function.{Function => JFunction}
 import scala.jdk.CollectionConverters._
 
 import zio.{Unsafe, URIO, ZIO}
-import zio.metrics.{MetricKey, MetricKeyType, MetricLabel, MetricListener}
+import zio.metrics.{MetricKey, MetricKeyType, MetricListener}
 import zio.metrics.connectors.micrometer.internal.AtomicDouble
 
 import io.micrometer.core.instrument.{Counter, DistributionSummary, Gauge => MGauge, MeterRegistry, Tag}

@@ -83,7 +83,7 @@ lazy val newrelic =
     .settings(
       stdSettings("zio.metrics.connectors.newrelic"),
       libraryDependencies ++= Seq(
-        "dev.zio"  %% "zio-http" % Version.zioHttp,
+        "dev.zio"  %% "zio-http" % "3.0.0-RC2", // TODO: update newrelic client to use `Version.zioHttp`
         "dev.zio" %%% "zio-json" % Version.zioJson,
       ),
     )
