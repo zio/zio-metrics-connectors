@@ -25,20 +25,20 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
         Chunk(
           "# TYPE jvm_memory_pool_collection_max_bytes gauge",
           "#HELP jvm_memory_pool_collection_max_bytes",
-          "jvm_memory_pool_collection_max_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
+          "jvm_memory_pool_collection_max_bytes{pool=\"Metaspace\"} 0.0 1681853772729",
         ),
         Chunk(
           "# TYPE jvm_memory_pool_collection_max_bytes gauge",
           "#HELP jvm_memory_pool_collection_max_bytes",
-          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\",} -1.0 1681853772729",
+          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\"} -1.0 1681853772729",
         ),
       )
       val groupedMetric = Chunk(
         Chunk(
           "# TYPE jvm_memory_pool_collection_max_bytes gauge",
           "#HELP jvm_memory_pool_collection_max_bytes",
-          "jvm_memory_pool_collection_max_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
-          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\",} -1.0 1681853772729",
+          "jvm_memory_pool_collection_max_bytes{pool=\"Metaspace\"} 0.0 1681853772729",
+          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\"} -1.0 1681853772729",
         ),
       )
       assertTrue(groupMetricByType(encodedMetric) == groupedMetric)
@@ -48,12 +48,12 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
         Chunk(
           "# TYPE jvm_memory_pool_collection_max_bytes gauge",
           "#HELP jvm_memory_pool_collection_max_bytes",
-          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\",} -1.0 1681853772729",
+          "jvm_memory_pool_collection_max_bytes{pool=\"G1 Eden Space\"} -1.0 1681853772729",
         ),
         Chunk(
           "# TYPE jvm_memory_pool_collection_used_bytes gauge",
           "#HELP jvm_memory_pool_collection_used_bytes",
-          "TYPE jvm_memory_pool_collection_used_bytes{pool=\"Metaspace\",} 0.0 1681853772729",
+          "TYPE jvm_memory_pool_collection_used_bytes{pool=\"Metaspace\"} 0.0 1681853772729",
         ),
       )
       assertTrue(groupMetricByType(encodedMetric) == encodedMetric)
@@ -66,7 +66,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
   private def labelString(key: MetricKey.Untyped, extra: (String, String)*) = {
     val tags = key.tags ++ extra.map(x => MetricLabel(x._1, x._2)).toSet
     if (tags.isEmpty) ""
-    else tags.toList.map(l => s"""${l.key}="${l.value}",""").mkString("{", "", "}")
+    else tags.toList.map(l => s"""${l.key}="${l.value}"""").mkString("{", ",", "}")
   }
 
   private val encodeCounter = test("Encode a Counter")(check(genCounter) { case (pair, state) =>

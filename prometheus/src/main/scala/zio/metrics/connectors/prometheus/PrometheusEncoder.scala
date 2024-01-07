@@ -43,7 +43,8 @@ case object PrometheusEncoder {
         else
           allLabels
             .foldLeft(new StringBuilder(256).append("{")) { case (sb, l) =>
-              sb.append(l.key).append("=\"").append(l.value).append("\",")
+              if (sb.size > 1) sb.append(",")
+              sb.append(l.key).append("=\"").append(l.value).append("\"")
             }
             .append("}")
       ).result()
