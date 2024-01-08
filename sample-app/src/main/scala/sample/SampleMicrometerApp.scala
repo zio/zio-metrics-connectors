@@ -1,15 +1,12 @@
 package sample
 
-import java.net.InetSocketAddress
-
 import zio._
 import zio.http._
-import zio.http.html._
 import zio.metrics.connectors.micrometer
 import zio.metrics.connectors.micrometer.MicrometerConfig
 import zio.metrics.jvm.DefaultJvmMetrics
-
 import io.micrometer.prometheus.{PrometheusConfig, PrometheusMeterRegistry}
+import zio.http.template.{Dom, Html}
 
 /**
  * This is a sample app that shows how to use the Micrometer connector.
@@ -26,22 +23,21 @@ object SampleMicrometerApp extends ZIOAppDefault with InstrumentedSample {
       |</body
       |</html>""".stripMargin
 
-  private lazy val static =
-    Http.collect[Request] { case Method.GET -> Root => Response.html(Html.fromString(indexPage)) }
+  private lazy val staticRoute =
+    Method.GET / "" -> handler(Response.html(Html.fromDomElement(Dom.raw(indexPage))))
 
   private lazy val micrometerPrometheusRouter =
-    Http
-      .collectZIO[Request] { case Method.GET -> Root / "micrometer" / "prometheusMetrics" =>
-        ZIO.serviceWith[PrometheusMeterRegistry](m => noCors(Response.text(m.scrape())))
-      }
+    Method.GET / "micrometer" / "prometheusMetrics" -> handler {
+      ZIO.serviceWith[PrometheusMeterRegistry](m => noCors(Response.text(m.scrape())))
+    }
 
   private def noCors(r: Response): Response =
     r.updateHeaders(_.combine(Headers(("Access-Control-Allow-Origin", "*"))))
 
-  private val serverInstall =
-    Server.install(static ++ micrometerPrometheusRouter)
+  private val httpApp: HttpApp[PrometheusMeterRegistry] =
+    Routes(staticRoute, micrometerPrometheusRouter).toHttpApp
 
-  private lazy val runHttp = (serverInstall *> ZIO.never).forkDaemon
+  private lazy val runHttp = (Server.serve(httpApp) *> ZIO.never).forkDaemon
 
   private lazy val serverConfig =
     ZLayer.succeed(Server.Config.default.port(bindPort))
