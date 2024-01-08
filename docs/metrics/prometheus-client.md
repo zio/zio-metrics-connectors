@@ -141,16 +141,10 @@ The resulting string can then be used in an HTTP response that has a `Content-Ty
 
 ## Example HTTP server using zio-http
 
-This section shows some code fragments from the example application that is provided in the zio-metrics-connectors
-repository on GitHub. In the example we use [zio-http](https://github.com/zio/zio-http) (version `3.0.0-RC4`) to serve
-the metrics.
-
-```scala mdoc:invisible
-import zio._
-import zio.http._
-import zio.metrics.connectors.{prometheusLayer, publisherLayer}
-import java.nio.charset.StandardCharsets
-```
+This section shows some code fragments from the
+[example application](https://github.com/zio/zio-metrics-connectors/blob/docs/sample-app/src/main/scala/sample/SamplePrometheusStatsDApp.scala)
+that is provided in the zio-metrics-connectors repository on GitHub. In the example we
+use [zio-http](https://github.com/zio/zio-http) (version `3.0.0-RC4`) to serve the metrics.
 
 First we define the metrics route:
 
