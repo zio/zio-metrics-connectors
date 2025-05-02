@@ -1,8 +1,9 @@
 package zio.metrics.connectors.datadog
 
-import java.time.Duration
+import zio.metrics.connectors.statsd.StatsdClientIpConfig
 
-import zio.{ULayer, ZLayer}
+import java.time.Duration
+import zio.{&, ULayer, ZLayer}
 
 /**
  * Datadog Specific configuration
@@ -32,7 +33,7 @@ final case class DatadogConfig(
   maxQueueSize: Int = 100000,
   containerId: Option[String] = None,
   entityId: Option[String] = None,
-  sendUnchanged: Boolean = false)
+  sendUnchanged: Boolean = false) extends StatsdClientIpConfig
 
 object DatadogConfig {
 
@@ -43,5 +44,5 @@ object DatadogConfig {
       histogramSendInterval = None,
     )
 
-  val defaultLayer: ULayer[DatadogConfig] = ZLayer.succeed(default)
+  val defaultLayer: ULayer[DatadogConfig & StatsdClientIpConfig] = ZLayer.succeed(default)
 }

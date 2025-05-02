@@ -4,15 +4,15 @@ import zio._
 import zio.internal.RingBuffer
 import zio.metrics.{MetricClient, MetricKey, MetricKeyType}
 import zio.metrics.connectors.internal.MetricsClient
-import zio.metrics.connectors.statsd.{StatsdClient, StatsdConfig}
+import zio.metrics.connectors.statsd.StatsdClient
 
 package object datadog {
 
-  lazy val datadogLayer: ZLayer[DatadogConfig & MetricsConfig, Nothing, Unit] =
+  lazy val datadogLayer: ZLayer[DatadogConfig & MetricsConfig & StatsdClient, Nothing, Unit] =
     ZLayer.scoped(
       for {
         config  <- ZIO.service[DatadogConfig]
-        clt     <- StatsdClient.make.provideSome[Scope](ZLayer.succeed(StatsdConfig(config.host, config.port)))
+        clt     <- ZIO.service[StatsdClient]
         queue    = RingBuffer.apply[(MetricKey[MetricKeyType.Histogram], Double)](config.maxQueueSize)
         listener = new DataDogListener(queue)
         _       <- Unsafe.unsafe(unsafe =>

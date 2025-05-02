@@ -42,7 +42,10 @@ private[connectors] object StatsdClient {
   private[connectors] def make: ZIO[Scope & StatsdConfig, Nothing, StatsdClient] =
     for {
       config  <- ZIO.service[StatsdConfig]
-      channel <- channelZIO(config.host, config.port).orDie
+      channel <- config match {
+        case c: StatsdClientIpConfig => channelZIO(c.host, c.port).orDie
+        case other => ZIO.dieMessage(s"Unknown configuration type: ${other.getClass.getName}")
+      }
       client   = new Live(channel)
     } yield client
 

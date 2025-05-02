@@ -5,7 +5,7 @@ import zio.http._
 import zio.http.template.{Dom, Html}
 import zio.metrics.connectors.{MetricsConfig, prometheus, statsd}
 import zio.metrics.connectors.prometheus.PrometheusPublisher
-import zio.metrics.connectors.statsd.StatsdConfig
+import zio.metrics.connectors.statsd.StatsdIpConfig
 import zio.metrics.jvm.DefaultJvmMetrics
 
 import java.nio.charset.StandardCharsets
@@ -70,7 +70,7 @@ object SamplePrometheusStatsDApp extends ZIOAppDefault with InstrumentedSample {
       prometheus.prometheusLayer,
 
       // The statsd reporting layer
-      ZLayer.succeed(StatsdConfig("127.0.0.1", 8125)),
+      ZLayer.succeed(StatsdIpConfig("127.0.0.1", 8125)),
       statsd.statsdLayer,
 
       // Enable the ZIO internal metrics and the default JVM metricsConfig
