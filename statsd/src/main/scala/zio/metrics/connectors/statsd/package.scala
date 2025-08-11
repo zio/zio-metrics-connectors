@@ -8,7 +8,7 @@ package object statsd {
   @deprecated("Use the statsdUDP or statsdUDS from the zio.metrics.connectors.statsd package instead", "2.4.0")
   lazy val statsdLayer: ZLayer[StatsdConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped(
-      StatsdClient.make.flatMap(clt => MetricsClient.make(statsdHandler(clt))).unit,
+      StatsdClient.make.flatMap(clt => MetricsClient.runScoped(statsdHandler(clt))).unit,
     )
 
   /**

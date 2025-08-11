@@ -22,7 +22,7 @@ package object datadog {
                      ),
                    )
         _       <- DataDogEventProcessor.make(clt, queue)
-        _       <- MetricsClient.make(datadogHandler(clt, config))
+        _       <- MetricsClient.runScoped(datadogHandler(clt, config))
       } yield (),
     )
 
@@ -39,7 +39,7 @@ package object datadog {
                      ),
                    )
         _       <- DataDogEventProcessor.make(clt, queue, config)
-        _       <- MetricsClient.make(datadogHandler(clt, config))
+        _       <- MetricsClient.runScoped(datadogHandler(clt, config))
       } yield (),
     )
 

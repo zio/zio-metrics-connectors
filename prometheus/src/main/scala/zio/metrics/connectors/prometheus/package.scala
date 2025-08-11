@@ -8,10 +8,10 @@ package object prometheus {
   lazy val publisherLayer: ULayer[PrometheusPublisher] = ZLayer.fromZIO(PrometheusPublisher.make)
 
   lazy val prometheusLayer: ZLayer[MetricsConfig & PrometheusPublisher, Nothing, Unit] =
-    ZLayer.fromZIO(
+    ZLayer.scoped(
       for {
         pub <- ZIO.service[PrometheusPublisher]
-        _   <- MetricsClient.make(prometheusHandler(pub))
+        _   <- MetricsClient.runScoped(prometheusHandler(pub))
       } yield (),
     )
 

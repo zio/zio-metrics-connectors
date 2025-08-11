@@ -1,69 +1,85 @@
 package zio.metrics.connectors.internal
 
 import zio._
-import zio.internal.metrics.metricRegistry
-import zio.metrics._
 import zio.metrics.connectors._
 
 object MetricsClient {
 
+  @deprecated("Use zio.metrics.connectors.internal.MetricsClient.runScoped instead")
   def make(handler: Iterable[MetricEvent] => UIO[Unit]): ZIO[MetricsConfig, Nothing, Unit] =
+    runDaemon(handler)
+
+  /**
+   * Creates a [[MetricsClient]].
+   * It is up to you to call [[MetricsClient.update]]/[[MetricsClient.runDaemon]].
+   *
+   * @param existingEventsAsNew determines whether the underlying [[MetricCache]] will begin with an empty or current state.
+   *                     see [[MetricCache.makeEmpty]]/[[MetricCache.makeCurrent]] for further explanation.
+   */
+  def client(handler: Iterable[MetricEvent] => UIO[Unit], existingEventsAsNew: Boolean = true): UIO[MetricsClient] = {
+    val makeCache: UIO[MetricCache] =
+      if (existingEventsAsNew) MetricCache.makeEmpty
+      else MetricCache.makeCurrent
+
+    makeCache.map(new MetricsClient(_, handler) {})
+  }
+
+  /**
+   * Creates a [[MetricsClient]] and runs it on a [[Schedule.fixed]] based on the provided [[MetricsConfig]].
+   * @see [[MetricsClient.client]]
+   */
+  def runScoped(
+    handler: Iterable[MetricEvent] => UIO[Unit],
+    existingEventsAsNew: Boolean = true,
+  ): ZIO[MetricsConfig & Scope, Nothing, Unit] =
     for {
-      cfg   <- ZIO.service[MetricsConfig]
-      state <- Ref.make[Set[MetricPair.Untyped]](Set.empty)
-      clt    = new MetricsClient(cfg, state, handler) {}
-      _     <- clt.run
+      clt <- client(handler, existingEventsAsNew)
+      cfg <- ZIO.service[MetricsConfig]
+      _   <- clt.runScoped(cfg)
+    } yield ()
+
+  /**
+   * Creates a [[MetricsClient]] and runs it on a [[Schedule.fixed]] based on the provided [[MetricsConfig]].
+   * @see [[MetricsClient.client]]
+   */
+  def runDaemon(
+    handler: Iterable[MetricEvent] => UIO[Unit],
+    existingEventsAsNew: Boolean = true,
+  ): ZIO[MetricsConfig, Nothing, Unit] =
+    for {
+      clt <- client(handler, existingEventsAsNew)
+      cfg <- ZIO.service[MetricsConfig]
+      _   <- clt.runDaemon(cfg)
     } yield ()
 
 }
 
-sealed abstract private class MetricsClient(
-  metricsCfg: MetricsConfig,
-  latestSnapshot: Ref[Set[MetricPair.Untyped]],
+/**
+ * A lightweight wrapper around a [[MetricCache]],
+ * where events emitted from state diffs are passed to the provided handler.
+ *
+ * [[MetricsClient]] constructors deliberately do not allow passing a [[MetricCache]],
+ * as this would allow a holder of the cache to call [[MetricCache.update]],
+ * therefore making the client wrapper receive an inaccurate history of events.
+ */
+sealed abstract class MetricsClient(
+  cache: MetricCache,
   handler: Iterable[MetricEvent] => UIO[Unit]) {
 
-  private def update(implicit trace: Trace): UIO[Unit] =
-    retrieveNext.flatMap(handler)
+  /**
+   * Compare the existing and current metric states,
+   * and call the provided [[handler]] with the events resulting from the comparison of those two states.
+   */
+  def update(implicit trace: Trace): UIO[Unit] =
+    cache.update.flatMap(handler)
 
-  private def retrieveNext(
-    implicit trace: Trace,
-  ): UIO[Set[MetricEvent]] =
-    latestSnapshot.modify { old =>
-      // first we get the state for all metrics that we had captured in the last run
-      val oldMap = stateMap(old)
-      // then we get the snapshot from the underlying metricRegistry
-      val next   = Unsafe.unsafe(implicit u => metricRegistry.snapshot())
-      val res    = events(oldMap, next)
-      (res, next)
-    }
+  private def run(metricsCfg: MetricsConfig)(implicit trace: Trace): UIO[Any] =
+    update.schedule(Schedule.duration(10.millis) ++ Schedule.fixed(metricsCfg.interval))
 
-  // This will create a map for the metrics captured in the last snapshot
-  private def stateMap(metrics: Set[MetricPair.Untyped]): Map[MetricKey.Untyped, MetricState.Untyped] = {
+  def runScoped(metricsCfg: MetricsConfig)(implicit trace: Trace): URIO[Scope, Unit] =
+    run(metricsCfg).forkScoped.unit
 
-    val builder = scala.collection.mutable.Map[MetricKey.Untyped, MetricState.Untyped]()
-    val it      = metrics.iterator
-    while (it.hasNext) {
-      val e = it.next()
-      builder.update(e.metricKey, e.metricState)
-    }
-
-    builder.toMap
-  }
-
-  private def events(
-    oldState: Map[MetricKey.Untyped, MetricState.Untyped],
-    metrics: Set[MetricPair.Untyped],
-  ): Set[MetricEvent] =
-    metrics
-      .map { mp =>
-        MetricEvent.make(mp.metricKey, oldState.get(mp.metricKey), mp.metricState)
-      }
-      .collect { case Right(e) => e }
-
-  private def run(implicit trace: Trace) =
-    update
-      .schedule(Schedule.duration(10.millis) ++ Schedule.fixed(metricsCfg.interval))
-      .forkDaemon
-      .unit
+  def runDaemon(metricsCfg: MetricsConfig)(implicit trace: Trace): UIO[Unit] =
+    run(metricsCfg).forkDaemon.unit
 
 }
