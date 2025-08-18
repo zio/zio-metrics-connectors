@@ -61,11 +61,9 @@ sealed abstract private class MetricsClient(
     val now      = Instant.now()
 
     while (iterator.hasNext) {
-      val mp = iterator.next()
-      MetricEvent.make(mp.metricKey, oldState.get(mp.metricKey), mp.metricState, now) match {
-        case Right(value) => builder += value
-        case _            => ()
-      }
+      val mp    = iterator.next()
+      val event = MetricEvent.unsafeMake(mp.metricKey, oldState.get(mp.metricKey), mp.metricState, now)
+      if (event ne null) builder += event
     }
 
     builder.result()

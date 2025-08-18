@@ -47,55 +47,70 @@ object MetricEvent {
     override val timestamp: Instant)
       extends MetricEvent
 
+  // Kept for backward compatibility
+  @deprecated("Use the other MetricEvent.make instead", "2.4.2")
+  def make[Type <: MetricKeyType { type Out = Out0 }, Out0](
+    metricKey: MetricKey[Type],
+    oldState: Option[MetricState[Out0]],
+    newState: MetricState[Out0],
+  ): Either[IllegalArgumentException, MetricEvent] =
+    make(metricKey, oldState, newState, Instant.now())
+
   def make[Type <: MetricKeyType { type Out = Out0 }, Out0](
     metricKey: MetricKey[Type],
     oldState: Option[MetricState[Out0]],
     newState: MetricState[Out0],
     now: Instant,
-  ): Either[IllegalArgumentException, MetricEvent] =
-    (oldState, newState) match {
-      case (Some(oldState @ MetricState.Counter(oldCount)), newState @ MetricState.Counter(newCount)) =>
-        if (oldCount != newCount)
-          Right(Updated(metricKey, oldState, newState, now))
-        else
-          Right(Unchanged(metricKey, newState, now))
+  ): Either[IllegalArgumentException, MetricEvent] = {
+    val event = unsafeMake(metricKey, oldState, newState, now)
 
-      case (Some(oldState @ MetricState.Gauge(oldValue)), newState @ MetricState.Gauge(newValue)) =>
-        if (oldValue != newValue)
-          Right(Updated(metricKey, oldState, newState, now))
-        else
-          Right(Unchanged(metricKey, newState, now))
+    if (event ne null) Right(event)
+    else Left(new IllegalArgumentException(s"Unsupported MetricState combination: ${oldState.get}, $newState"))
+  }
 
-      case (Some(oldState @ MetricState.Frequency(oldOccurences)), newState @ MetricState.Frequency(newOcurrences)) =>
-        if (oldOccurences != newOcurrences)
-          Right(Updated(metricKey, oldState, newState, now))
-        else
-          Right(Unchanged(metricKey, newState, now))
+  private[zio] def unsafeMake[Type <: MetricKeyType { type Out = Out0 }, Out0](
+    metricKey: MetricKey[Type],
+    oldState: Option[MetricState[Out0]],
+    newState: MetricState[Out0],
+    now: Instant,
+  ): MetricEvent =
+    oldState match {
+      case None            => New(metricKey, newState, now)
+      case Some(oldState0) =>
+        @inline def updated   = Updated(metricKey, oldState0, newState, now)
+        @inline def unchanged = Unchanged(metricKey, newState, now)
 
-      case (
-            Some(oldState @ MetricState.Summary(_, _, oldCount, _, _, _)),
-            newState @ MetricState.Summary(_, _, newCount, _, _, _),
-          ) =>
-        if (oldCount != newCount)
-          Right(Updated(metricKey, oldState, newState, now))
-        else
-          Right(Unchanged(metricKey, newState, now))
+        oldState0 match {
+          case MetricState.Counter(oldCount) =>
+            newState match {
+              case MetricState.Counter(newCount) => if (oldCount != newCount) updated else unchanged
+              case _                             => null
+            }
 
-      case (
-            Some(oldState @ MetricState.Histogram(_, oldCount, _, _, _)),
-            newState @ MetricState.Histogram(_, newCount, _, _, _),
-          ) =>
-        if (oldCount != newCount)
-          Right(Updated(metricKey, oldState, newState, now))
-        else
-          Right(Unchanged(metricKey, newState, now))
+          case MetricState.Gauge(oldValue) =>
+            newState match {
+              case MetricState.Gauge(newValue) => if (oldValue != newValue) updated else unchanged
+              case _                           => null
+            }
 
-      case (None, state) =>
-        Right(New(metricKey, state, now))
+          case MetricState.Frequency(oldOccurences) =>
+            newState match {
+              case MetricState.Frequency(newOccurrences) => if (oldOccurences != newOccurrences) updated else unchanged
+              case _                                     => null
+            }
 
-      case (oldState, newState) =>
-        Left(new IllegalArgumentException(s"Unsupported MetricState combination: $oldState, $newState"))
+          case MetricState.Summary(_, _, oldCount, _, _, _) =>
+            newState match {
+              case MetricState.Summary(_, _, newCount, _, _, _) => if (oldCount != newCount) updated else unchanged
+              case _                                            => null
+            }
 
+          case MetricState.Histogram(_, oldCount, _, _, _) =>
+            newState match {
+              case MetricState.Histogram(_, newCount, _, _, _) => if (oldCount != newCount) updated else unchanged
+              case _                                           => null
+            }
+        }
     }
 
 }
