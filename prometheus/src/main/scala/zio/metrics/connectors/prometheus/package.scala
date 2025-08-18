@@ -5,15 +5,15 @@ import zio.metrics.connectors.internal.MetricsClient
 
 package object prometheus {
 
-  lazy val publisherLayer: ULayer[PrometheusPublisher] = ZLayer.fromZIO(PrometheusPublisher.make)
+  val publisherLayer: ULayer[PrometheusPublisher] = ZLayer.fromZIO(PrometheusPublisher.make)
 
-  lazy val prometheusLayer: ZLayer[MetricsConfig & PrometheusPublisher, Nothing, Unit] =
-    ZLayer.fromZIO(
+  val prometheusLayer: ZLayer[MetricsConfig & PrometheusPublisher, Nothing, Unit] =
+    ZLayer.scoped {
       for {
         pub <- ZIO.service[PrometheusPublisher]
         _   <- MetricsClient.make(prometheusHandler(pub))
-      } yield (),
-    )
+      } yield ()
+    }
 
   private def prometheusHandler(clt: PrometheusPublisher): Iterable[MetricEvent] => UIO[Unit] =
     events =>
@@ -28,7 +28,7 @@ package object prometheus {
         _              <- clt.set(groupedReport.flatten.addString(new StringBuilder(old.length), "\n").toString())
       } yield ()
 
-  def groupMetricByType(report: Chunk[Chunk[String]]): Chunk[Chunk[String]] =
+  private[connectors] def groupMetricByType(report: Chunk[Chunk[String]]): Chunk[Chunk[String]] =
     Chunk.fromIterable(report.groupBy(thm => thm.take(2)).map { case (th, thmChunk) =>
       th ++ thmChunk.map(_.drop(2)).flatten
     })

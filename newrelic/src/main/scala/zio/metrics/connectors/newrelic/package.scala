@@ -12,12 +12,15 @@ package object newrelic {
       Client.default.orDie,
     )
 
-  private lazy val make: URLayer[MetricsConfig & NewRelicConfig & Client, Unit] = ZLayer(for {
-    encoder <- newRelicEncoder
-    client  <- NewRelicClient.make
-    handler  = newRelicHandler(encoder, client)
-    _       <- MetricsClient.make(handler)
-  } yield ())
+  private lazy val make: URLayer[MetricsConfig & NewRelicConfig & Client, Unit] =
+    ZLayer.scoped {
+      for {
+        encoder <- newRelicEncoder
+        client  <- NewRelicClient.make
+        handler  = newRelicHandler(encoder, client)
+        _       <- MetricsClient.make(handler)
+      } yield ()
+    }
 
   private lazy val newRelicEncoder =
     Clock.instant.map(NewRelicEncoder.apply)
