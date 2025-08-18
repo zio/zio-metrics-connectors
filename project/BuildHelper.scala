@@ -6,6 +6,8 @@ import sbtbuildinfo.BuildInfoKeys._
 
 object BuildHelper {
 
+  val JdkReleaseVersion: String = "17"
+
   private val stdOptions = Seq(
     "-encoding",
     "UTF-8",
@@ -15,7 +17,7 @@ object BuildHelper {
     "-unchecked",
     "-deprecation",
     "-release",
-    "11",
+    JdkReleaseVersion,
     // "-Xfatal-warnings"
   )
 
@@ -48,19 +50,16 @@ object BuildHelper {
     "-Ywarn-unused-import",
   )
 
-  private val dottyOptions = Seq(
+  private val scala3Options = Seq(
     "-noindent",
     "-source:3.0-migration",
     "-Xignore-scala2-macros",
   )
 
-  private val silencerVersion = "1.7.19"
-
   private def extraOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((3, _))  => dottyOptions
-      case Some((2, 13)) =>
-        stdOpts213 ++ stdOpts2X
+      case Some((3, _))  => scala3Options
+      case Some((2, 13)) => stdOpts213 ++ stdOpts2X
       case Some((2, 12)) =>
         Seq(
           "-opt-warnings",
@@ -70,8 +69,7 @@ object BuildHelper {
           "-opt:l:inline",
           "-opt-inline-from:<source>",
         ) ++ stdOptsUpto212 ++ stdOpts2X
-      case _             =>
-        Seq("-Xexperimental") ++ stdOptsUpto212 ++ stdOpts2X
+      case _             => throw new IllegalArgumentException(s"Unsupported Scala version: $scalaVersion")
     }
 
   def buildInfoSettings(packageName: String) =
@@ -87,18 +85,6 @@ object BuildHelper {
       crossScalaVersions       := Seq(Scala212, Scala213, Scala3),
       ThisBuild / scalaVersion := Scala213,
       scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value),
-      libraryDependencies ++= {
-        if (scalaVersion.value != Scala3)
-          Seq(
-            ("com.github.ghik"   % "silencer-lib"    % silencerVersion % Provided)
-              .cross(CrossVersion.full),
-            compilerPlugin(
-              ("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full),
-            ),
-          )
-        else
-          Seq()
-      },
       incOptions ~= (_.withLogRecompileOnMacro(false)),
       Test / parallelExecution := false,
     )
