@@ -41,15 +41,14 @@ sealed abstract private class MetricsClient(
 
   // This will create a map for the metrics captured in the last snapshot
   private def stateMap(metrics: Set[MetricPair.Untyped]): Map[MetricKey.Untyped, MetricState.Untyped] = {
-
-    val builder = scala.collection.mutable.Map[MetricKey.Untyped, MetricState.Untyped]()
+    val builder = Map.newBuilder[MetricKey.Untyped, MetricState.Untyped]
+    builder.sizeHint(metrics.size)
     val it      = metrics.iterator
     while (it.hasNext) {
       val e = it.next()
-      builder.update(e.metricKey, e.metricState)
+      builder += (e.metricKey -> e.metricState)
     }
-
-    builder.toMap
+    builder.result()
   }
 
   private def events(
@@ -57,6 +56,7 @@ sealed abstract private class MetricsClient(
     metrics: Set[MetricPair.Untyped],
   ): Set[MetricEvent] = {
     val builder  = Set.newBuilder[MetricEvent]
+    builder.sizeHint(metrics.size)
     val iterator = metrics.iterator
     val now      = Instant.now()
 
