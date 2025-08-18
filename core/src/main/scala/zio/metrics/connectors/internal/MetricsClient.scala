@@ -1,5 +1,7 @@
 package zio.metrics.connectors.internal
 
+import java.time.Instant
+
 import zio._
 import zio.internal.metrics.metricRegistry
 import zio.metrics._
@@ -53,14 +55,23 @@ sealed abstract private class MetricsClient(
   private def events(
     oldState: Map[MetricKey.Untyped, MetricState.Untyped],
     metrics: Set[MetricPair.Untyped],
-  ): Set[MetricEvent] =
-    metrics
-      .map { mp =>
-        MetricEvent.make(mp.metricKey, oldState.get(mp.metricKey), mp.metricState)
-      }
-      .collect { case Right(e) => e }
+  ): Set[MetricEvent] = {
+    val builder  = Set.newBuilder[MetricEvent]
+    val iterator = metrics.iterator
+    val now      = Instant.now()
 
-  private def run(implicit trace: Trace) =
+    while (iterator.hasNext) {
+      val mp = iterator.next()
+      MetricEvent.make(mp.metricKey, oldState.get(mp.metricKey), mp.metricState, now) match {
+        case Right(value) => builder += value
+        case _            => ()
+      }
+    }
+
+    builder.result()
+  }
+
+  private def run(implicit trace: Trace): UIO[Unit] =
     update
       .schedule(Schedule.duration(10.millis) ++ Schedule.fixed(metricsCfg.interval))
       .forkDaemon

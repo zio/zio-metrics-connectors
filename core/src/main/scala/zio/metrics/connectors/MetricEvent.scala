@@ -51,46 +51,47 @@ object MetricEvent {
     metricKey: MetricKey[Type],
     oldState: Option[MetricState[Out0]],
     newState: MetricState[Out0],
+    now: Instant,
   ): Either[IllegalArgumentException, MetricEvent] =
     (oldState, newState) match {
       case (Some(oldState @ MetricState.Counter(oldCount)), newState @ MetricState.Counter(newCount)) =>
         if (oldCount != newCount)
-          Right(Updated(metricKey, oldState, newState, Instant.now))
+          Right(Updated(metricKey, oldState, newState, now))
         else
-          Right(Unchanged(metricKey, newState, Instant.now))
+          Right(Unchanged(metricKey, newState, now))
 
       case (Some(oldState @ MetricState.Gauge(oldValue)), newState @ MetricState.Gauge(newValue)) =>
         if (oldValue != newValue)
-          Right(Updated(metricKey, oldState, newState, Instant.now))
+          Right(Updated(metricKey, oldState, newState, now))
         else
-          Right(Unchanged(metricKey, newState, Instant.now))
+          Right(Unchanged(metricKey, newState, now))
 
       case (Some(oldState @ MetricState.Frequency(oldOccurences)), newState @ MetricState.Frequency(newOcurrences)) =>
         if (oldOccurences != newOcurrences)
-          Right(Updated(metricKey, oldState, newState, Instant.now))
+          Right(Updated(metricKey, oldState, newState, now))
         else
-          Right(Unchanged(metricKey, newState, Instant.now))
+          Right(Unchanged(metricKey, newState, now))
 
       case (
             Some(oldState @ MetricState.Summary(_, _, oldCount, _, _, _)),
             newState @ MetricState.Summary(_, _, newCount, _, _, _),
           ) =>
         if (oldCount != newCount)
-          Right(Updated(metricKey, oldState, newState, Instant.now))
+          Right(Updated(metricKey, oldState, newState, now))
         else
-          Right(Unchanged(metricKey, newState, Instant.now))
+          Right(Unchanged(metricKey, newState, now))
 
       case (
             Some(oldState @ MetricState.Histogram(_, oldCount, _, _, _)),
             newState @ MetricState.Histogram(_, newCount, _, _, _),
           ) =>
         if (oldCount != newCount)
-          Right(Updated(metricKey, oldState, newState, Instant.now))
+          Right(Updated(metricKey, oldState, newState, now))
         else
-          Right(Unchanged(metricKey, newState, Instant.now))
+          Right(Unchanged(metricKey, newState, now))
 
       case (None, state) =>
-        Right(New(metricKey, state, Instant.now))
+        Right(New(metricKey, state, now))
 
       case (oldState, newState) =>
         Left(new IllegalArgumentException(s"Unsupported MetricState combination: $oldState, $newState"))
