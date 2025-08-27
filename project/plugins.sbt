@@ -5,6 +5,6 @@ addSbtPlugin("org.scoverage"      % "sbt-scoverage"   % "2.3.1")
 addSbtPlugin("ch.epfl.scala"      % "sbt-bloop"       % "2.0.13")
 addSbtPlugin("com.github.sbt"     % "sbt-ci-release"  % "1.11.2")
 addSbtPlugin("io.spray"           % "sbt-revolver"    % "0.10.0")
-addSbtPlugin("dev.zio"            % "zio-sbt-website" % "0.4.0-alpha.33")
+addSbtPlugin("dev.zio"            % "zio-sbt-website" % "0.4.0-alpha.34")
 
 addDependencyTreePlugin
