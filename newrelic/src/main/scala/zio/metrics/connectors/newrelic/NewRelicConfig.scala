@@ -30,7 +30,7 @@ object NewRelicConfig {
         newRelicUri          <- System.env(envMetricsUri).map(_.map(NewRelicUri.Custom.apply)).map(_.getOrElse(NewRelicUri.NA))
         maxMetricsPerRequest <- System.envOrElse(envMaxMetricsPerRequest, "500").map(_.toInt)
         maxPublishingDelay   <- System.envOrElse(envMaxPublishingDelay, "PT5S").map(Duration.parse)
-      } yield (NewRelicConfig(apiKey, newRelicUri, maxMetricsPerRequest, maxPublishingDelay)))
+      } yield NewRelicConfig(apiKey, newRelicUri, maxMetricsPerRequest, maxPublishingDelay))
       .orDie
 
   val fromEnvEULayer: ZLayer[Any, Nothing, NewRelicConfig] =

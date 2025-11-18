@@ -6,7 +6,8 @@ import zio.metrics._
 trait InstrumentedSample {
 
   // Create a gauge, it can be applied to effects yielding a Double
-  val aspGauge1 = Metric.gauge("gauge1", "Description of gauge1")
+  val aspGauge1 = Metric
+    .gauge("gauge1", "Description of gauge1")
     .tagged("tag1", "tag value")
     .tagged("tag2", "anoter tag value")
 

@@ -78,7 +78,7 @@ trait Generators {
     count <- genPosLong
     min   <- Gen.double
     max   <- Gen.double.filter(_ >= min)
-    sum    = (min + max)
+    sum    = min + max
   } yield {
     val boundaries = MetricKeyType.Histogram.Boundaries.linear(0, 10, 11)
     val buckets    = Chunk(

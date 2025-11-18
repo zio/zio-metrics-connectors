@@ -216,7 +216,7 @@ final case class NewRelicEncoder(startedAt: Instant) {
     intervalInMillis: Long,
     min: Double,
     max: Double,
-  ): Json.Obj = Json.Obj(
+  ): Json.Obj       = Json.Obj(
     "value"       -> Json
       .Obj("count" -> Json.Num(count), "sum" -> Json.Num(sum), "min" -> Json.Num(min), "max" -> Json.Num(max)),
     "interval.ms" -> Json.Num(intervalInMillis),

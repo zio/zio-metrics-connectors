@@ -47,7 +47,7 @@ object DataDogEventProcessor {
 
   // Backwards compatibility for 2.12
   private def groupMap[A, K, B](as: Chunk[A])(key: A => K)(f: A => B): Map[K, Chunk[B]] = {
-    val m = mutable.Map.empty[K, mutable.Builder[B, Chunk[B]]]
+    val m      = mutable.Map.empty[K, mutable.Builder[B, Chunk[B]]]
     for (elem <- as) {
       val k       = key(elem)
       val builder = m.getOrElseUpdate(k, Chunk.newBuilder)

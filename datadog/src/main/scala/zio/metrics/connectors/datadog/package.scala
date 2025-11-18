@@ -46,10 +46,11 @@ package object datadog {
   private def eventFilter(config: DatadogPublisherConfig): MetricEvent => Boolean =
     if (config.sendUnchanged) {
       !_.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]
-    } else {
-      case MetricEvent.Unchanged(_, _, _) => false
-      case e                              => !e.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]
-    }
+    } else
+      {
+        case MetricEvent.Unchanged(_, _, _) => false
+        case e                              => !e.metricKey.keyType.isInstanceOf[metrics.MetricKeyType.Histogram]
+      }
 
   @deprecated("Use the overload that accepts DatadogPublisherConfig instead", "2.4.0")
   private[connectors] def datadogHandler(
