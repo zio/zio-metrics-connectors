@@ -15,8 +15,8 @@ object StatsdEncoderSpec extends ZIOSpecDefault {
 
   private def testMetric(k: MetricKey.Untyped, m: MetricState.Untyped) =
     for {
-      event   <- ZIO.clockWith(_.instant).map(now => MetricEvent.New(k, m, now))
-      encoded <- StatsdEncoder.encode(event)
+      event  <- ZIO.clockWith(_.instant).map(now => MetricEvent.New(k, m, now))
+      encoded = StatsdEncoder.pureEncode(event)
     } yield new String(encoded.toArray)
 
   private val sendCounter = test("send counter updates") {
