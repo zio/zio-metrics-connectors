@@ -120,9 +120,7 @@ case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String]
       .append("|")
       .append(metricType)
 
-    val result = if (withAllTags.nonEmpty) {
-      withMetric.append("|#").append(tagBuf)
-    } else withMetric
+    val result = if (withAllTags.isEmpty) withMetric else withMetric.append("|#").append(withAllTags)
 
     suffix.fold(result)(result.append)
   }
