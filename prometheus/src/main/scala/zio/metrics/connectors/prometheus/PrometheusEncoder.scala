@@ -50,9 +50,10 @@ case object PrometheusEncoder {
         val iterator     = allLabels.iterator
         while (iterator.hasNext) {
           val l = iterator.next()
+          val v = l.value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
           if (notFirstLoop) sb.append(",")
           notFirstLoop = true
-          sb.append(l.key).append("=\"").append(l.value).append("\"")
+          sb.append(l.key).append("=\"").append(v).append("\"")
         }
         sb.append("}")
         sb.toString

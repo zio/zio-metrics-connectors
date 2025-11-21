@@ -17,6 +17,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
         encodeFrequency,
         encodeSummary,
         encodeHistogram,
+        encodeLabelEscaping,
       ) @@ timed @@ timeoutWarning(60.seconds) @@ parallel @@ withLiveClock
 
   def testGroupMetricByType = suite("The groupMetricByType method should")(
@@ -171,4 +172,21 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
       ),
     )
   })
+
+  private val encodeLabelEscaping = test("Escape special characters in label values") {
+    val key = MetricKey.counter("test_metric").tagged(
+      MetricLabel("label_with_backslash", "value\\with\\backslash"),
+      MetricLabel("label_with_quote", "value\"with\"quote"),
+      MetricLabel("label_with_newline", "value\nwith\nnewline"),
+    )
+    for {
+      timestamp <- Clock.instant
+      text      <- PrometheusEncoder.encode(New(key, MetricState.Counter(1.0), timestamp))
+      output     = text.mkString("\n")
+    } yield assertTrue(
+      output.contains("""label_with_backslash="value\\with\\backslash"""") &&
+        output.contains("""label_with_quote="value\"with\"quote"""") &&
+        output.contains("""label_with_newline="value\nwith\nnewline""""),
+    )
+  }
 }
