@@ -30,8 +30,17 @@ case object DatadogEncoder {
     val encoder = makeStatsdEncoder(config)
 
     def encodeHistogramValues(key: MetricKey[MetricKeyType.Histogram], values: NonEmptyChunk[Double]): StringBuilder = {
-      val result = new StringBuilder(BUF_PER_METRIC)
-      encoder.appendMetric(result, key.name, values, "d", key.tags)
+      val builder = new java.lang.StringBuilder(BUF_PER_METRIC)
+      encoder.appendMetric(
+        builder = builder,
+        name = key.name,
+        values = values,
+        metricType = "d",
+        tags = key.tags,
+      )
+
+      // Scala StringBuilder keep for retro-compatibility as this function is public
+      new StringBuilder(underlying = builder)
     }
 
     (key, values) => Chunk.fromArray(encodeHistogramValues(key, values).toString().getBytes())
