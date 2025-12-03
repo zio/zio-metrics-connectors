@@ -14,17 +14,25 @@ package object statsd {
   /**
    * Creates a layer that provides a StatsdClient that sends metrics over UDP network protocol.
    */
-  def statsdUDP: URLayer[StatsdConfig & MetricsConfig, Unit] =
+  def statsdUDP: URLayer[StatsdConfig & MetricsConfig, StatsdClient] =
     ZLayer.scoped[StatsdConfig & MetricsConfig] {
-      StatsdClient.make.flatMap(metricsClient)
+      StatsdClient.make.flatMap { statsdClient =>
+        for {
+          _ <- metricsClient(statsdClient)
+        } yield statsdClient
+      }
     }
 
   /**
    * Creates a layer that provides a StatsdClient that sends metrics over unix domain socket (UDS).
    */
-  def statsdUDS: URLayer[DatagramSocketConfig & MetricsConfig, Unit] =
+  def statsdUDS: URLayer[DatagramSocketConfig & MetricsConfig, StatsdClient] =
     ZLayer.scoped[DatagramSocketConfig & MetricsConfig] {
-      DatagramSocketClient.make.flatMap(metricsClient)
+      DatagramSocketClient.make.flatMap { statsdClient =>
+        for {
+          _ <- metricsClient(statsdClient)
+        } yield statsdClient
+      }
     }
 
   private def metricsClient(client: StatsdClient): URIO[MetricsConfig & Scope, Unit] =
