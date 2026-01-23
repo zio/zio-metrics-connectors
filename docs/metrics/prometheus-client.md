@@ -20,7 +20,7 @@ Most of the ZIO metrics have a direct representation in the Prometheus encoding.
 A counter is represented as a prometheus counter.
 
 ```scala
-Metrics.counter("count_all", "The counter description.")
+Metric.counter("count_all", "The counter description.")
 ```
 
 ```
@@ -34,7 +34,7 @@ count_all 460.0 1623586224730
 A gauge is represented as a prometheus gauge.
 
 ```scala
-Metrics.gauge("adjust_gauge", "The gauge description.")
+Metric.gauge("adjust_gauge", "The gauge description.")
 ```
 
 ```
@@ -48,7 +48,7 @@ adjust_gauge -1.2485836762095701 1623586224730
 A histogram is represented as a prometheus histogram.
 
 ```scala
-Metrics.histogram(
+Metric.histogram(
   "my_histogram",
   "My histogram description.",
   MetricKeyType.Histogram.Boundaries.linear(0.0, 10.0, 11)

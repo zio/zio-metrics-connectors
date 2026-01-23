@@ -54,8 +54,8 @@ _Summaries_ all support `Double` values, while a _Frequency_ supports `String` v
 can use the `contramap` method. For example, a Gauge that supports `Long`s is written as:
 
 ```scala
-val longGauge: Metrics.Gauge[Long] =
-  Metric.Gauge("my_metric").contramap[Long](_.toDouble)
+val longGauge: Metric.Gauge[Long] =
+  Metric.gauge("my_metric").contramap[Long](_.toDouble)
 ```
 
 Method `fromConst` works like `contramap` but always returns the same value. For example a counter that always increases
