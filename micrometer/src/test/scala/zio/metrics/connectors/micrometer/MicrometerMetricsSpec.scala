@@ -7,6 +7,7 @@ import scala.jdk.CollectionConverters._
 
 import zio.{durationInt, Chunk, Scope, ZIO, ZLayer}
 import zio.metrics.{Metric, MetricKey, MetricKeyType, MetricLabel}
+import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.test.{assertTrue, Spec, TestEnvironment, ZIOSpecDefault}
 import zio.test.TestAspect.{timed, timeoutWarning}
 
@@ -16,7 +17,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 
 object MicrometerMetricsSpec extends ZIOSpecDefault {
 
-  override def spec: Spec[TestEnvironment with Scope, Any] =
+  override def spec: Spec[TestEnvironment with Scope, Any] = suite("The Micrometer registry spec")(
     suite("The Micrometer registry should")(
       testCounter,
       testGauge,
@@ -25,11 +26,14 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
       testSummary,
       testFrequency,
       testDescription,
-    ).provide(
+    ).provideSome[MeterRegistry](
       micrometerLayer,
-      ZLayer.succeed(new SimpleMeterRegistry()),
       ZLayer.succeed(MicrometerConfig.default),
-    ) @@ timed @@ timeoutWarning(60.seconds)
+    ),
+    suite("Special suites")(
+      testHistogramMultiplier,
+    ),
+  ).provide(ZLayer.succeed(new SimpleMeterRegistry())) @@ timed @@ timeoutWarning(60.seconds)
 
   private def testMetric[Type <: MetricKeyType](
     key: MetricKey[Type],
@@ -76,25 +80,60 @@ object MicrometerMetricsSpec extends ZIOSpecDefault {
     }
   }
 
+  val M = 10 // with M = 1 this fails
+
+  private val testHistogramMultiplier = test("support histogram double values via multiplier") {
+    val name     = "testHistogramMultiplier"
+    val testData = Seq(0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5)
+    val buckets  = Chunk(0.825, 1.7, 3.0)
+
+    testMetric(MetricKey.histogram(name, Boundaries(buckets)))(testData).map { searchResult =>
+      val summary  = searchResult.summary()
+      val snapshot = summary.takeSnapshot()
+      assertTrue(
+        summary.getId.getBaseUnit eq null,
+        snapshot.count() == testData.size.toLong,
+        snapshot.total() == testData.sum * M,
+        snapshot.max() == testData.max * M,
+        snapshot.histogramCounts().toList == buckets
+          .map(bound => new CountAtBucket(bound * M, testData.count(_ <= bound).toDouble))
+          .toList,
+      )
+    }
+  }.provideSomeLayer[MeterRegistry](
+    ZLayer.succeed(MicrometerConfig.default.copy(histogramMultiplicator = M)) >>> micrometerLayer,
+  )
+
+  /**
+   * A Timer is really a specialized distribution summary that is aware of how to scale durations to the base unit of
+   * time of each monitoring system and has an automatically determined base unit.
+   * In every case where you want to measure time, you should use a Timer rather than a DistributionSummary.
+   *
+   * e.g. Prometheus base time unit is seconds:
+   * https://prometheus.io/docs/practices/naming/#base-units
+   */
   private val testTimer = test("catch zio timer updates") {
     val name     = "testTimer"
-    val testData = Chunk(1.0, 2.0, 3.0, 4.0, 5.0)
-    val buckets  = MetricKeyType.Histogram.Boundaries.linear(1, 1, 3)
+    val testData = Chunk(0, 1, 2, 3, 4).map(_.seconds)
+    val buckets  = Chunk(0.5, 1500.0, 3000.0)
     val tags     = Set(MetricLabel("key", "value"))
+    // negative boundaries are skipped by ZIO
+    val timer    = Metric.timer(name, ChronoUnit.MILLIS, -1000.0 +: buckets).tagged(tags)
 
     for {
-      _       <- ZIO.foreachDiscard(testData)(d =>
-                   ZIO.succeed(d.toInt.seconds) @@ Metric.timer(name, ChronoUnit.SECONDS, buckets.values).tagged(tags),
-                 )
-      summary <- ZIO.serviceWith[MeterRegistry](_.get(name).tags(micrometerTags(tags).asJava).summary())
-      snapshot = summary.takeSnapshot()
+      _       <- ZIO.foreachDiscard(testData)(d => ZIO.succeed(d) @@ timer)
+      meter   <- ZIO.serviceWith[MeterRegistry](_.get(name).tags(micrometerTags(tags).asJava).timer())
+      snapshot = meter.takeSnapshot() // hardcoded TimeUnit.NANOSECONDS for total(), max()
     } yield assertTrue(
-      summary.getId.getBaseUnit == "seconds",
+      meter.getId.getBaseUnit == "seconds", // set by backend system, not by user
       snapshot.count() == testData.size.toLong,
-      snapshot.total() == testData.sum,
-      snapshot.max() == testData.max,
-      snapshot.histogramCounts().toList == buckets.values
-        .map(bound => new CountAtBucket(bound, testData.count(_ <= bound).toDouble))
+      snapshot.total() == testData.map(_.toNanos).sum.toDouble,
+      snapshot.max() == testData.map(_.toNanos).max.toDouble,
+      snapshot.histogramCounts().toList == buckets
+        .map(_ * 1000000)
+        // ZIO adds `Double.MaxValue` boundary, but Timer supports only Long.MaxValue nanoseconds
+        .:+(Long.MaxValue.toDouble)
+        .map(bound => new CountAtBucket(bound, testData.count(_.toNanos <= bound).toDouble))
         .toList,
     )
   }
