@@ -102,8 +102,7 @@ case object PrometheusEncoder {
         min = h.min,
         max = h.max,
         buckets = h.buckets.sortBy(_._1).map { case (le, v) =>
-          val label = if (le == Double.MaxValue) { "+Inf" }
-          else { String.valueOf(le) }
+          val label = if (le == Double.MaxValue) "+Inf" else String.valueOf(le)
           (
             Set(MetricLabel("le", label)),
             Some(v.doubleValue()),
