@@ -101,15 +101,13 @@ case object PrometheusEncoder {
         sum = h.sum,
         min = h.min,
         max = h.max,
-        buckets = h.buckets
-          .filter(_._1 != Double.MaxValue)
-          .sortBy(_._1)
-          .map { s =>
-            (
-              Set(MetricLabel("le", String.valueOf(s._1))),
-              Some(s._2.doubleValue()),
-            )
-          } :+ (Set(MetricLabel("le", "+Inf")) -> Some(h.count.doubleValue())),
+        buckets = h.buckets.sortBy(_._1).map { case (le, v) =>
+          val label = if (le == Double.MaxValue) "+Inf" else String.valueOf(le)
+          (
+            Set(MetricLabel("le", label)),
+            Some(v.doubleValue()),
+          )
+        },
       )
 
     def sampleSummary(s: MetricState.Summary): SampleResult =

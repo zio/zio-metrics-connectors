@@ -144,13 +144,14 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
 
   private val encodeHistogram = test("Encode a Histogram")(check(genHistogram) { case (pair, state) =>
     for {
-      timestamp    <- ZIO.clockWith(_.instant)
-      text         <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
-      name          = pair.metricKey.name
-      epochMilli    = timestamp.toEpochMilli
-      help          = helpString(pair.metricKey)
-      labels        = labelString(pair.metricKey)
-      labelsWithInf = labelString(pair.metricKey, "le" -> "+Inf")
+      timestamp     <- ZIO.clockWith(_.instant)
+      text          <- PrometheusEncoder.encode(New(pair.metricKey, state, timestamp))
+      name           = pair.metricKey.name
+      epochMilli     = timestamp.toEpochMilli
+      help           = helpString(pair.metricKey)
+      labels         = labelString(pair.metricKey)
+      labelsWithInf  = labelString(pair.metricKey, "le" -> "+Inf")
+      infBucketValue = state.buckets.sortBy(_._1).lastOption.fold(0.0)(_._2.doubleValue())
     } yield assertTrue(
       text == Chunk(
         s"# TYPE $name histogram",
@@ -162,7 +163,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
             val labelsWithExtra = labelString(pair.metricKey, "le" -> k.toString)
             s"""${name}_bucket$labelsWithExtra ${v.toDouble} $epochMilli\n"""
           }
-          ++ s"""${name}_bucket$labelsWithInf ${state.count.toDouble} $epochMilli\n""").mkString,
+          ++ s"""${name}_bucket$labelsWithInf $infBucketValue $epochMilli\n""").mkString,
       ) ++ Chunk(
         s"${name}_sum$labels ${state.sum} $epochMilli",
         s"${name}_count$labels ${state.count.toDouble} $epochMilli",
