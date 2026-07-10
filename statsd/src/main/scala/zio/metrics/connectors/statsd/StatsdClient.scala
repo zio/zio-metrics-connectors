@@ -32,12 +32,14 @@ private[connectors] object StatsdClient {
   }
 
   private def channelZIO(host: String, port: Int): ZIO[Scope, Throwable, DatagramChannel] =
-    ZIO.fromAutoCloseable(ZIO.attempt {
-      val channel = DatagramChannel.open()
-      channel.connect(new InetSocketAddress(host, port))
-      channel.configureBlocking(false)
-      channel
-    })
+    ZIO.fromAutoCloseable(
+      ZIO.attempt {
+        val channel = DatagramChannel.open()
+        channel.connect(new InetSocketAddress(host, port))
+        channel.configureBlocking(false)
+        channel
+      },
+    )
 
   private[connectors] def make: ZIO[Scope & StatsdConfig, Nothing, StatsdClient] =
     for {
