@@ -48,8 +48,10 @@ case object DatadogEncoder {
 
   private def makeStatsdEncoder(config: DatadogPublisherConfig): StatsdEncoder =
     StatsdEncoder(
-      config.entityId.map(eid => MetricLabel("dd.internal.entity_id", eid)).toList,
-      config.containerId.map(cidString),
+      constantTags =
+        config.constantTags ++ config.entityId.map(eid => MetricLabel("dd.internal.entity_id", eid)).toList,
+      suffix = config.containerId.map(cidString),
+      prefix = config.prefix,
     )
 
   private def cidString(cid: String) = s"|c:$cid"

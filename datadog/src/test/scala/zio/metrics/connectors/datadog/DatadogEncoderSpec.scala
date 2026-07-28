@@ -18,6 +18,10 @@ object DatadogEncoderSpec extends ZIOSpecDefault {
     encodeEntityId,
     encodeHistogramWithContainerId,
     encodeHistogramWithEntityId,
+    encodePrefix,
+    encodeHistogramWithPrefix,
+    encodeConstantTags,
+    encodeHistogramWithConstantTags,
   ) @@ timed @@ timeoutWarning(60.seconds)
 
   private val sendHistogram = test("send histogram update") {
@@ -82,6 +86,52 @@ object DatadogEncoderSpec extends ZIOSpecDefault {
     val key      = MetricKey.histogram(name, Boundaries(Chunk.empty)).tagged(tagName, tagValue)
     val encoded  = new String(encoder(key, NonEmptyChunk(1.0, 2.0)).toArray)
     assertTrue(encoded == s"$name:1:2|d|#dd.internal.entity_id:aaa,$tagName:$tagValue")
+  }
+
+  private val encodePrefix = test("encode prefix") {
+    val prefix  = "myapp."
+    val name    = "m1"
+    val encoder = DatadogEncoder.encoder(DatadogPublisherConfig(prefix = Some(prefix)))
+    val event   = MetricEvent.New(MetricKey.gauge(name), MetricState.Gauge(1), Instant.now())
+    for {
+      encoded <- encoder(event)
+      s        = new String(encoded.toArray)
+    } yield assertTrue(s == s"$prefix$name:1|g")
+  }
+
+  private val encodeHistogramWithPrefix = test("encode histogram with prefix") {
+    val prefix   = "myapp."
+    val name     = "testHistogram"
+    val tagName  = "testTag"
+    val tagValue = "tagValue"
+    val encoder  = DatadogEncoder.histogramEncoder(DatadogPublisherConfig(prefix = Some(prefix)))
+    val key      = MetricKey.histogram(name, Boundaries(Chunk.empty)).tagged(tagName, tagValue)
+    val encoded  = new String(encoder(key, NonEmptyChunk(1.0, 2.0)).toArray)
+    assertTrue(encoded == s"$prefix$name:1:2|d|#$tagName:$tagValue")
+  }
+
+  private val encodeConstantTags = test("encode constant tags") {
+    val name    = "m1"
+    val encoder = DatadogEncoder.encoder(
+      DatadogPublisherConfig(constantTags = List(MetricLabel("env", "prod"), MetricLabel("service", "api"))),
+    )
+    val event   = MetricEvent.New(MetricKey.gauge(name), MetricState.Gauge(1), Instant.now())
+    for {
+      encoded <- encoder(event)
+      s        = new String(encoded.toArray)
+    } yield assertTrue(s == s"$name:1|g|#env:prod,service:api")
+  }
+
+  private val encodeHistogramWithConstantTags = test("encode histogram with constant tags") {
+    val name     = "testHistogram"
+    val tagName  = "testTag"
+    val tagValue = "tagValue"
+    val encoder  = DatadogEncoder.histogramEncoder(
+      DatadogPublisherConfig(constantTags = List(MetricLabel("env", "prod"))),
+    )
+    val key      = MetricKey.histogram(name, Boundaries(Chunk.empty)).tagged(tagName, tagValue)
+    val encoded  = new String(encoder(key, NonEmptyChunk(1.0, 2.0)).toArray)
+    assertTrue(encoded == s"$name:1:2|d|#env:prod,$tagName:$tagValue")
   }
 
 }

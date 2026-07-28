@@ -8,7 +8,11 @@ package object statsd {
   @deprecated("Use the statsdUDP or statsdUDS from the zio.metrics.connectors.statsd package instead", "2.4.0")
   def statsdLayer: ZLayer[StatsdConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped[StatsdConfig & MetricsConfig] {
-      StatsdClient.make.flatMap(metricsClient)
+      for {
+        config       <- ZIO.service[StatsdConfig]
+        statsdClient <- StatsdClient.make
+        _            <- metricsClient(statsdClient, encoder(config))
+      } yield ()
     }
 
   /**
@@ -16,11 +20,11 @@ package object statsd {
    */
   def statsdUDP: URLayer[StatsdConfig & MetricsConfig, StatsdClient] =
     ZLayer.scoped[StatsdConfig & MetricsConfig] {
-      StatsdClient.make.flatMap { statsdClient =>
-        for {
-          _ <- metricsClient(statsdClient)
-        } yield statsdClient
-      }
+      for {
+        config       <- ZIO.service[StatsdConfig]
+        statsdClient <- StatsdClient.make
+        _            <- metricsClient(statsdClient, encoder(config))
+      } yield statsdClient
     }
 
   /**
@@ -28,14 +32,20 @@ package object statsd {
    */
   def statsdUDS: URLayer[DatagramSocketConfig & MetricsConfig, StatsdClient] =
     ZLayer.scoped[DatagramSocketConfig & MetricsConfig] {
-      DatagramSocketClient.make.flatMap { statsdClient =>
-        for {
-          _ <- metricsClient(statsdClient)
-        } yield statsdClient
-      }
+      for {
+        config       <- ZIO.service[DatagramSocketConfig]
+        statsdClient <- DatagramSocketClient.make
+        _            <- metricsClient(statsdClient, encoder(config))
+      } yield statsdClient
     }
 
-  private def metricsClient(client: StatsdClient): URIO[MetricsConfig & Scope, Unit] =
+  private def encoder(config: StatsdConfig): StatsdEncoder =
+    StatsdEncoder(constantTags = config.constantTags, suffix = config.suffix, prefix = config.prefix)
+
+  private def encoder(config: DatagramSocketConfig): StatsdEncoder =
+    StatsdEncoder(constantTags = config.constantTags, suffix = config.suffix, prefix = config.prefix)
+
+  private def metricsClient(client: StatsdClient, encoder: StatsdEncoder): URIO[MetricsConfig & Scope, Unit] =
     MetricsClient.make { events =>
       val evtFilter: MetricEvent => Boolean = {
         case _: MetricEvent.Unchanged => false
@@ -43,7 +53,7 @@ package object statsd {
       }
 
       ZIO
-        .foreachDiscard(events.collect { case e if evtFilter(e) => StatsdEncoder.pureEncode(e) }) { encoded =>
+        .foreachDiscard(events.collect { case e if evtFilter(e) => encoder.pureEncode(e) }) { encoded =>
           ZIO
             .attempt(client.send(encoded))
             .ignore // TODO: Do we want to at least log a problem sending the metrics ?
