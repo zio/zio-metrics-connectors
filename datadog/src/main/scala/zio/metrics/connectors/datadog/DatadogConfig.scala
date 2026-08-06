@@ -3,6 +3,7 @@ package zio.metrics.connectors.datadog
 import java.time.Duration
 
 import zio.{ULayer, ZLayer}
+import zio.metrics.MetricLabel
 
 /**
  * Datadog Specific configuration
@@ -72,6 +73,13 @@ object DatadogConfig {
  *  An optional docker container ID
  * @param entityId
  *  An optional entity ID value used with an internal tag for tracking client entity
+ * @param sendUnchanged
+ *  Whether metrics that did not change since the last poll are sent as well
+ * @param constantTags
+ *  Tags that are added to every metric that is sent
+ * @param prefix
+ *  An optional prefix that is prepended to every metric name. Any separator has to be part of the value,
+ *  e.g. `Some("myapp.")` turns `myCounter` into `myapp.myCounter`
  */
 case class DatadogPublisherConfig(
   histogramSendInterval: Option[Duration] = None,
@@ -79,4 +87,6 @@ case class DatadogPublisherConfig(
   maxQueueSize: Int = 100000,
   containerId: Option[String] = None,
   entityId: Option[String] = None,
-  sendUnchanged: Boolean = false)
+  sendUnchanged: Boolean = false,
+  constantTags: List[MetricLabel] = Nil,
+  prefix: Option[String] = None)

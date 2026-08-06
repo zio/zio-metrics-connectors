@@ -6,7 +6,7 @@ import zio._
 import zio.metrics._
 import zio.metrics.connectors._
 
-case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String]) {
+case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String], prefix: Option[String] = None) {
 
   private val BUF_PER_METRIC: Int   = 128
   private val format: DecimalFormat = new DecimalFormat("0.################")
@@ -147,6 +147,9 @@ case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String]
     extraTags: MetricLabel*,
   ): Unit = {
     if (!builder.isEmpty) builder.append('\n')
+
+    prefix.foreach(builder.append)
+
     builder.append(name)
     values.foreach(value => builder.append(':').append(format.format(value)))
     builder.append('|').append(metricType)
@@ -175,4 +178,4 @@ case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String]
 
 }
 
-object StatsdEncoder extends StatsdEncoder(Nil, None)
+object StatsdEncoder extends StatsdEncoder(Nil, None, None)
