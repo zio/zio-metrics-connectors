@@ -64,7 +64,7 @@ lazy val statsd =
     .in(file("statsd"))
     .settings(
       stdSettings("zio.metrics.connectors.statsd"),
-      libraryDependencies ++= Seq("com.github.jnr" % "jnr-unixsocket" % "0.39.2"),
+      libraryDependencies ++= Seq("com.github.jnr" % "jnr-unixsocket" % "0.39.3"),
     )
     .enablePlugins(BuildInfoPlugin)
     .dependsOn(core % "compile->compile;test->test")
