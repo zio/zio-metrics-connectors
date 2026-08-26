@@ -6,8 +6,7 @@ import zio.http.template.{Dom, Html}
 import zio.metrics.connectors.micrometer
 import zio.metrics.connectors.micrometer.MicrometerConfig
 import zio.metrics.jvm.DefaultJvmMetrics
-
-import io.micrometer.prometheus.{PrometheusConfig, PrometheusMeterRegistry}
+import io.micrometer.prometheusmetrics.{PrometheusMeterRegistry, PrometheusConfig}
 
 /**
  * This is a sample app that shows how to use the Micrometer connector.
