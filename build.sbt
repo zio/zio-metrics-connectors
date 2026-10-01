@@ -1,5 +1,6 @@
-import BuildHelper._
 import zio.sbt.githubactions.DependencyBot
+
+import BuildHelper._
 
 inThisBuild(
   List(
