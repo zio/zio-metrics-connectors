@@ -1,3 +1,5 @@
+import zio.sbt.githubactions.DependencyBot
+
 import BuildHelper._
 
 inThisBuild(
@@ -33,11 +35,26 @@ inThisBuild(
       ),
     ),
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+
+    // zio-sbt-ci: `sbt ciGenerateGithubWorkflow` regenerates .github/workflows/ci.yml,
+    // auto-approve.yml and auto-merge.yml from these settings.
+    ciEnabledBranches      := Seq("series/2.x"),
+    ciTargetScalaVersions  := targetScalaVersionsFor(core, statsd, datadog, newrelic, prometheus, micrometer).value,
+    // Preserves the pre-migration auto-approve.yml, which approves the bare `scala-steward`
+    // actor in addition to the plugin's defaults.
+    ciDependencyUpdateBots := Seq(
+      DependencyBot.Dependabot,
+      DependencyBot.Renovate,
+      DependencyBot.ScalaSteward("zio-scala-steward"),
+      DependencyBot.Custom("scala-steward"),
+    ),
   ),
 )
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+// zio-sbt-ci's generated Lint job runs `sbt lint`; reuse the existing formatting check.
+addCommandAlias("lint", "check")
 
 lazy val root =
   project
