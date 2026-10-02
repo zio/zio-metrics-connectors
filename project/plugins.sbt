@@ -4,7 +4,7 @@ addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"   % "0.13.2")
 addSbtPlugin("org.scoverage"      % "sbt-scoverage"   % "2.4.4")
 addSbtPlugin("com.github.sbt"     % "sbt-ci-release"  % "1.12.1")
 addSbtPlugin("io.spray"           % "sbt-revolver"    % "0.10.0")
-addSbtPlugin("dev.zio"            % "zio-sbt-website" % "0.8.1")
-addSbtPlugin("dev.zio"            % "zio-sbt-ci"      % "0.8.1")
+addSbtPlugin("dev.zio"            % "zio-sbt-website" % "0.8.5")
+addSbtPlugin("dev.zio"            % "zio-sbt-ci"      % "0.8.5")
 
 addDependencyTreePlugin
