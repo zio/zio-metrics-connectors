@@ -89,22 +89,22 @@ jobs:
         - '25'
         scala-project:
         - ++2.12.21 micrometer
-        - ++2.13.18 micrometer
+        - ++3.10.0 micrometer
         - ++3.9.0 micrometer
         - ++2.12.21 datadog
-        - ++2.13.18 datadog
+        - ++3.10.0 datadog
         - ++3.9.0 datadog
         - ++2.12.21 prometheus
-        - ++2.13.18 prometheus
+        - ++3.10.0 prometheus
         - ++3.9.0 prometheus
         - ++2.12.21 statsd
-        - ++2.13.18 statsd
+        - ++3.10.0 statsd
         - ++3.9.0 statsd
         - ++2.12.21 newrelic
-        - ++2.13.18 newrelic
+        - ++3.10.0 newrelic
         - ++3.9.0 newrelic
         - ++2.12.21 core
-        - ++2.13.18 core
+        - ++3.10.0 core
         - ++3.9.0 core
     steps:
     - name: Install libuv
