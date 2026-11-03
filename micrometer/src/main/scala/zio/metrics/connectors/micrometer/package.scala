@@ -1,5 +1,7 @@
 package zio.metrics.connectors
 
+import java.time.temporal.ChronoUnit
+
 import scala.collection.immutable.Iterable
 
 import zio.{Unsafe, ZIO, ZLayer}
@@ -23,4 +25,11 @@ package object micrometer {
 
   private[micrometer] def micrometerTags(zioMetricTags: Iterable[MetricLabel]): Iterable[Tag] =
     zioMetricTags.map(metricTag => Tag.of(metricTag.key, metricTag.value))
+
+  // it would be better if ZIO had a separated metric type Timer and provided a typed ChronoUnit
+  private[micrometer] val ChronoUnitByNameLower: Map[String, ChronoUnit] =
+    ChronoUnit
+      .values()
+      .map(cu => cu.name().toLowerCase -> cu)
+      .toMap
 }
