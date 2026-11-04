@@ -41,6 +41,20 @@ case object PrometheusEncoder {
 
     val encodeTimestamp = String.valueOf(timestamp.toEpochMilli)
 
+    def appendEscapedLabelValue(sb: java.lang.StringBuilder, value: String): Unit = {
+      var i   = 0
+      val len = value.length
+      while (i < len) {
+        value.charAt(i) match {
+          case '\\' => sb.append("\\\\")
+          case '"'  => sb.append("\\\"")
+          case '\n' => sb.append("\\n")
+          case c    => sb.append(c)
+        }
+        i += 1
+      }
+    }
+
     def encodeLabels(allLabels: Set[MetricLabel]): String =
       if (allLabels.isEmpty) ""
       else {
@@ -52,7 +66,9 @@ case object PrometheusEncoder {
           val l = iterator.next()
           if (notFirstLoop) sb.append(",")
           notFirstLoop = true
-          sb.append(l.key).append("=\"").append(l.value).append("\"")
+          sb.append(l.key).append("=\"")
+          appendEscapedLabelValue(sb, l.value)
+          sb.append("\"")
         }
         sb.append("}")
         sb.toString
