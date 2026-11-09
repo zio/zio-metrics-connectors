@@ -131,6 +131,59 @@ via a UDS socket this can be used with datadog agent starting with version 6.0.0
       .orDie
 ```
 
+## Configuration
+
+The `datadog.live` layer reads a `DatadogPublisherConfig`, and it needs a `StatsdClient` to send the datagrams. That client comes from the `statsd.statsdUDP` or `statsd.statsdUDS` layer. The layer also reads `MetricsConfig`, which sets how often the metrics registry is polled.
+
+| Field                   | Type                | Default  | Description                                                               |
+| ----------------------- | ------------------- | -------- | ------------------------------------------------------------------------- |
+| `histogramSendInterval` | `Option[Duration]`  | `None`   | How often histograms are sent. Defaults to the `MetricsConfig` interval.  |
+| `maxBatchedMetrics`     | `Int`               | `10`     | Maximum number of metrics batched into one send. Affects packet size.     |
+| `maxQueueSize`          | `Int`               | `100000` | Maximum number of metrics stored in the queue. Affects memory use.        |
+| `containerId`           | `Option[String]`    | `None`   | Docker container ID, appended to every datagram as a suffix.              |
+| `entityId`              | `Option[String]`    | `None`   | Entity ID, sent as the `dd.internal.entity_id` tag.                       |
+| `sendUnchanged`         | `Boolean`           | `false`  | Whether metrics that did not change since the last poll are sent as well. |
+| `constantTags`          | `List[MetricLabel]` | `Nil`    | Tags added to every datagram.                                             |
+| `prefix`                | `Option[String]`    | `None`   | Text prepended to every metric name.                                      |
+
+The older `DatadogConfig` is deprecated since version 2.4.0. It has no `prefix` or `constantTags` fields, so use `DatadogPublisherConfig` instead.
+
+### Prefix and Constant Tags
+
+The `prefix` is prepended to every metric name, and the `constantTags` are added to every datagram before the tags of the metric itself. Any separator has to be part of the prefix. To report under `myapp.` with the environment and service as tags:
+
+```scala
+import zio.metrics.MetricLabel
+import zio.metrics.connectors.datadog.DatadogPublisherConfig
+
+val publisherConfig = DatadogPublisherConfig(
+  prefix = Some("myapp."),
+  constantTags = List(MetricLabel("env", "prod"), MetricLabel("service", "checkout")),
+)
+```
+
+With this configuration, a counter named `countAll` is sent as:
+
+```
+myapp.countAll:1|c|#env:prod,service:checkout
+```
+
+Histograms are sent as distributions with the same prefix and tags, so the same settings apply to them. A histogram named `myHistogram` with the value 3 is sent as `myapp.myHistogram:3|d|#env:prod,service:checkout`.
+
+### Entity ID
+
+When `entityId` is set, the client adds the internal `dd.internal.entity_id` tag after the constant tags. The tag lets Datadog track the client entity that sent the metric. To set an entity ID:
+
+```scala
+import zio.metrics.connectors.datadog.DatadogPublisherConfig
+
+val publisherConfig = DatadogPublisherConfig(entityId = Some("pod-uid-123"))
+```
+
+With both `constantTags` and `entityId` set, the counter above is sent as `myapp.countAll:1|c|#env:prod,service:checkout,dd.internal.entity_id:pod-uid-123`.
+
+The `containerId` is sent as a suffix after the tags. For example, a gauge named `m1` with the container ID `aaa` is sent as `m1:1|g|c:aaa`.
+
 ## A simple StatsD / Datadog setup
 
 The following steps describe how to set up a ZIO application reporting to [Datadog](https://www.datadoghq.com/) using a free Datadog account
