@@ -9,7 +9,7 @@ import zio.metrics._
 ```
 
 The trait below is used in the
-[zio metrics sample application](https://github.com/zio/zio-metrics-connectors/blob/docs/sample-app/src/main/scala/sample/SamplePrometheusStatsDApp.scala)
+[zio metrics sample application](https://github.com/zio/zio-metrics-connectors/blob/series/2.x/sample-app/src/main/scala/sample/SamplePrometheusStatsDApp.scala)
 that is provided in the zio-metrics-connectors repository on GitHub. It shows how the individual metrics can be
 configured and used.
 
@@ -22,7 +22,7 @@ trait InstrumentedSample {
   // Create a gauge, it can be applied to effects yielding a Double
   val aspGauge1 = Metric.gauge("gauge1", "Description of gauge1")
     .tagged("tag1", "tag value")
-    .tagged("tag2", "anoter tag value")
+    .tagged("tag2", "another tag value")
 
   val aspGauge2 = Metric.gauge("gauge2")
 
@@ -32,7 +32,7 @@ trait InstrumentedSample {
     Metric.histogram("my_histogram", MetricKeyType.Histogram.Boundaries.linear(0.0d, 10.0d, 11))
 
   // Create a summary that can hold 100 samples, the max age of the samples is 1 day.
-  // The summary should report th 10%, 50% and 90% Quantile
+  // The summary should report the 10%, 50% and 90% quantile
   // It can be applied to effects yielding an Int
   val aspSummary =
     Metric.summary("my_summary", 1.day, 100, 0.03d, Chunk(0.1, 0.5, 0.9)).contramap[Int](_.toDouble)
