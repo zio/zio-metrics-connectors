@@ -92,11 +92,9 @@ mySet:1|g|#token:myKey-12
 ## The ZIO Metrics StatsD example
 
 ```scala
-import java.net.InetSocketAddress
-
 import zio._
-import zio.console._
-import zio.metrics.connectors.statsd.statsdLayer
+import zio.metrics.connectors.MetricsConfig
+import zio.metrics.connectors.statsd.{StatsdConfig, statsdUDP}
 
 import sample.InstrumentedSample
 
@@ -112,19 +110,25 @@ Again we need an effect that runs our instrumented code until the user presses a
 val execute =
   for {
    fiber <- instrumentedSample.program.fork
-    _ <- putStrLn("Press Any Key") *> getStrLn.orDie 
+    _ <- Console.printLine("Press Any Key") *> Console.readLine.orDie 
     _ <- fiber.interrupt
   } yield ExitCode.success
 ```  
 
-Now, we can override the `run` method of our ZIO `App` and simply provide a `StatsDListener`. 
+Now, we can extend `ZIOAppDefault`, override its `run` method, and provide the `statsdUDP` layer. Building this layer starts the reporting, so it is provided even though `execute` does not use the `StatsdClient` directly:
 
 ```scala 
-def run(args: List[String]): URIO[ZEnv, ExitCode] =
-  execute.provideCustomLayer(statsdLayer).orDie
+override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
+  execute
+    .provide(
+      ZLayer.succeed(MetricsConfig(100.millis)),
+      ZLayer.succeed(StatsdConfig("localhost", 8125)),
+      statsdUDP,
+    )
+    .orDie
 ```
 
-> It is a listener because it listens to changes in the ZIO Metrics internal state and reports them 
+> The layer registers a listener on the ZIO Metrics internal state. On each poll it sends the changes to StatsD as datagrams.
 > to StatsD by sending out appropriate datagrams. 
 
 ## A simple StatsD / Datadog setup 

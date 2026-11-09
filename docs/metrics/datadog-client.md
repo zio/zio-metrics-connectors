@@ -78,9 +78,10 @@ mySet:1|g|#token:myKey-12
 ## The ZIO metrics DataDog example
 
 ```scala
-import zio.Console._
 import zio._
 import zio.metrics.connectors._
+
+import sample.InstrumentedSample
 
 val instrumentedSample = new InstrumentedSample() {}
 ```
@@ -94,7 +95,7 @@ Again we need an effect that runs our instrumented code until the user presses a
 val execute =
   for {
    fiber <- instrumentedSample.program.fork
-    _ <- putStrLn("Press Any Key") *> getStrLn.orDie 
+    _ <- Console.printLine("Press Any Key") *> Console.readLine.orDie 
     _ <- fiber.interrupt
   } yield ExitCode.success
 ```  
