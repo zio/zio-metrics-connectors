@@ -131,6 +131,61 @@ override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
 > The layer registers a listener on the ZIO Metrics internal state. On each poll it sends the changes to StatsD as datagrams.
 > to StatsD by sending out appropriate datagrams. 
 
+## Configuration
+
+The StatsD client takes a `StatsdConfig` when it sends datagrams over UDP, and a `DatagramSocketConfig` when it sends them to a unix domain socket. The `statsdUDP` and `statsdUDS` layers read these settings. They also read `MetricsConfig`, which sets how often the metrics registry is polled.
+
+| Field          | Type                | Default  | Description                                 |
+| -------------- | ------------------- | -------- | ------------------------------------------- |
+| `host`         | `String`            | required | Host name of the StatsD agent.              |
+| `port`         | `Int`               | required | Port of the StatsD agent.                   |
+| `prefix`       | `Option[String]`    | `None`   | Text prepended to every metric name.        |
+| `constantTags` | `List[MetricLabel]` | `Nil`    | Tags added to every datagram.               |
+| `suffix`       | `Option[String]`    | `None`   | Text appended to the end of every datagram. |
+
+`StatsdConfig.default` points to `localhost` on port `8125`. `DatagramSocketConfig` has a `path` field instead of `host` and `port`, and it accepts the same `prefix`, `constantTags` and `suffix` fields. If a datagram cannot be sent, the client drops it without raising an error.
+
+### Prefix
+
+The `prefix` is prepended to every metric name, including each bucket line of a histogram. Any separator has to be part of the prefix. To report all metrics under `myapp.`:
+
+```scala
+import zio.metrics.connectors.statsd.StatsdConfig
+
+val config = StatsdConfig("localhost", 8125, prefix = Some("myapp."))
+```
+
+With this configuration, a counter named `countAll` that reaches 1 is sent as:
+
+```
+myapp.countAll:1|c
+```
+
+### Constant Tags
+
+The `constantTags` are added to every datagram, before the tags of the metric itself. Use them for values that are the same across the whole application, such as the environment:
+
+```scala
+import zio.metrics.MetricLabel
+import zio.metrics.connectors.statsd.StatsdConfig
+
+val config = StatsdConfig(
+  host = "localhost",
+  port = 8125,
+  constantTags = List(MetricLabel("env", "prod"), MetricLabel("service", "checkout")),
+)
+```
+
+With these tags, the same counter is sent as:
+
+```
+countAll:1|c|#env:prod,service:checkout
+```
+
+A metric with its own tags, such as `region:eu`, appends them after the constant tags: `countAll:1|c|#env:prod,service:checkout,region:eu`.
+
+The `suffix` is appended to the end of every datagram, after the tags. The client adds it as written, so include any separator in the value yourself.
+
 ## A simple StatsD / Datadog setup 
 
 The following steps describe how to set up a ZIO Metrics application reporting to [Datadog](https://www.datadoghq.com/) using a free Datadog account 
