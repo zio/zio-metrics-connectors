@@ -100,7 +100,7 @@ val execute =
   } yield ExitCode.success
 ```  
 
-Now, we can override the `run` method of our ZIO `App` and simply provide a `datadog.datadogLayer`.
+Now, we can extend `ZIOAppDefault`, override its `run` method, and provide the `datadog.live` layer together with the `statsd.statsdUDP` layer that supplies its `StatsdClient`.
 
 ```scala 
   override def run: ZIO[ZIOAppArgs with Scope, Any, Any] =
@@ -115,8 +115,7 @@ Now, we can override the `run` method of our ZIO `App` and simply provide a `dat
       .orDie
 ```
 
-Alternatively, we can use the `statsdClient.liveDatagram` layer which is a convenience layer that provides an ability to send datagrams
-via a UDS socket this can be used with datadog agent starting with version 6.0.0 on the linux platform.
+Alternatively, we can send datagrams over a unix domain socket (UDS) with the `statsd.statsdUDS` layer. It takes a `statsd.DatagramSocketConfig` instead of a `StatsdConfig`. This can be used with the Datadog agent starting with version 6.0.0 on the Linux platform.
 
 ```scala 
   override def run: ZIO[ZIOAppArgs with Scope, Any, Any] =

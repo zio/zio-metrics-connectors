@@ -13,7 +13,7 @@ metrics to. The format of the metrics is defined in simple [datagrams](https://d
 
 With the StatsD client creates the relevant StatsD datagrams and sends them via UDP. 
 
-> The instrumented code is exactly the as for the Prometheus instrumentation. The only difference is that 
+> The instrumented code is exactly the same as for the Prometheus instrumentation. The only difference is that 
 > another client is provided when the App is configured. 
 
 ## ZIO metrics in StatsD
