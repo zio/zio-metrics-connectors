@@ -115,6 +115,10 @@ Now, we can extend `ZIOAppDefault`, override its `run` method, and provide the `
       .orDie
 ```
 
+:::warning[Each metric is sent twice with this layer combination]
+The `datadog.live` layer needs a `StatsdClient`. The public layers that provide one, `statsd.statsdUDP` and `statsd.statsdUDS`, also start their own sender for every metric. With the combination above, each metric update is therefore sent once by each sender, and the Datadog agent receives two identical datagrams per update.
+:::
+
 Alternatively, we can send datagrams over a unix domain socket (UDS) with the `statsd.statsdUDS` layer. It takes a `statsd.DatagramSocketConfig` instead of a `StatsdConfig`. This can be used with the Datadog agent starting with version 6.0.0 on the Linux platform.
 
 ```scala 
