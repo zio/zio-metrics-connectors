@@ -16,10 +16,6 @@ In order to support such a range of different platforms, the metric state is kep
 optimized to update as efficiently as possible. The data required by the collecting platforms is generated only when it
 is required.
 
-ZIO Metrics Connectors also allows us to dump current metric states (in one of the next minor releases) out of the box
-to analyze the metrics in the development phase before the decision for a metric platform has been made or in cases when
-the platform might not be feasible to use in development.
-
 > Changing which platform the metrics are reported to has no impact on the application at all. Once instrumented
 > properly, the decision where to report to happens 'at the end of the world', that is, in the ZIO application's main
 > entry point, by providing one or more of the available reporting clients.
