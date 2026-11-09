@@ -85,9 +85,9 @@ val countAllErrors =
 val effectWithMeasurement = effect @@ countAllErrors
 ```
 
-# Metric types
+## Metric Types
 
-## Counter
+### Counter
 
 A counter is a metric of which the value can only increase over time. A counter can be created with one of these
 methods:
@@ -105,7 +105,7 @@ Besides using a counter as an aspect (with the `@@` operator), counter metrics c
 longCounter.incrementBy(10L)
 ```
 
-### Examples
+#### Examples
 
 Create a counter named `count_all` which is incremented by `1` every time it is invoked. Since the metric type is `Any`
 the aspect can be applied to effect of any type.
@@ -138,7 +138,7 @@ from a stream or something similar):
 val countBytes = nextDoubleBetween(0.0d, 100.0d) @@ aspCountBytes
 ```
 
-## Gauges
+### Gauges
 
 A gauge is a metric that can change over time. A gauge can be created as follows:
 
@@ -156,7 +156,7 @@ for {
 } yield ()
 ```
 
-### Examples
+#### Examples
 
 Create a gauge that can be applied to effects that produce a Double:
 
@@ -171,7 +171,7 @@ aspects if the type constraints are satisfied.
 val measuredEffect = nextDoubleBetween(0.0d, 100.0d) @@ aspGauge @@ aspCountAll
 ```
 
-## Histograms
+### Histograms
 
 A histogram is a metric that counts the measured values in buckets. Each bucket is defined by an upper boundary. The
 count in a bucket with upper boundary `b` increases by `1` if an observed value `v` is less or equal to `b`. As a
@@ -202,7 +202,7 @@ val latencyHistogram: Metric.Histogram[Double] =
   Metric.histogram("queue_size", boundaries)
 ```
 
-### Examples
+#### Examples
 
 Create a histogram with 10 buckets: `0..100` in steps of `10` and `Double.MaxValue`. It can be applied to effects
 yielding a `Double`.
@@ -236,7 +236,7 @@ val effect: ZIO[Any, Throwable, Unit] = ???
 effect @@ latencyHistogram.trackDuration
 ```
 
-## Summaries
+### Summaries
 
 Similar to a histogram a summary also observes `Double` values. While a histogram directly modifies the bucket counters
 and does not keep the individual samples, the summary keeps the observed samples in its internal state. To avoid the set
@@ -270,7 +270,7 @@ Metric.summary(
 ): Metric.Summary[Double]
 ```
 
-### Examples
+#### Examples
 
 Create a summary that can hold 100 samples, the max age of the samples is `1 day` and the error margin is `3%`. The
 summary should report the `10%`, `50%` and `90%` quantiles. It can be applied to effects producing an `Int`.
@@ -286,7 +286,7 @@ Now we can apply this aspect to an effect producing an `Int`:
 val summary = nextIntBetween(100, 500) @@ aspSummary
 ```
 
-## Frequencies
+### Frequencies
 
 Frequencies are used to count the occurrences of distinct string values. For example an application that uses logical
 names for its services, the number of invocations for each service can be tracked.
@@ -302,7 +302,7 @@ A frequency can be created with the `frequency` method:
 Metric.frequency(name: String): Metric.Frequency[String]
 ```
 
-### Examples
+#### Examples
 
 Create a Frequency to observe the occurrences of unique Strings. It can be applied to effects producing a String.
 
