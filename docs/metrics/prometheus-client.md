@@ -58,20 +58,22 @@ Metric.histogram(
 ```
 # TYPE my_histogram histogram
 # HELP my_histogram My histogram description.
-my_histogram{le="0.0"} 0.0 1623586224730
-my_histogram{le="10.0"} 8.0 1623586224730
-my_histogram{le="20.0"} 18.0 1623586224730
-my_histogram{le="30.0"} 30.0 1623586224730
-my_histogram{le="40.0"} 44.0 1623586224730
-my_histogram{le="50.0"} 51.0 1623586224730
-my_histogram{le="60.0"} 59.0 1623586224730
-my_histogram{le="70.0"} 65.0 1623586224730
-my_histogram{le="80.0"} 76.0 1623586224730
-my_histogram{le="90.0"} 88.0 1623586224730
-my_histogram{le="100.0"} 95.0 1623586224730
-my_histogram{le="+Inf"} 115.0 1623586224730
+my_histogram_bucket{le="0.0"} 0.0 1623586224730
+my_histogram_bucket{le="10.0"} 8.0 1623586224730
+my_histogram_bucket{le="20.0"} 18.0 1623586224730
+my_histogram_bucket{le="30.0"} 30.0 1623586224730
+my_histogram_bucket{le="40.0"} 44.0 1623586224730
+my_histogram_bucket{le="50.0"} 51.0 1623586224730
+my_histogram_bucket{le="60.0"} 59.0 1623586224730
+my_histogram_bucket{le="70.0"} 65.0 1623586224730
+my_histogram_bucket{le="80.0"} 76.0 1623586224730
+my_histogram_bucket{le="90.0"} 88.0 1623586224730
+my_histogram_bucket{le="100.0"} 95.0 1623586224730
+my_histogram_bucket{le="+Inf"} 115.0 1623586224730
 my_histogram_sum 6828.578655207023 1623586224730
 my_histogram_count 115.0 1623586224730
+my_histogram_min 0.2 1623586224730
+my_histogram_max 118.4 1623586224730
 ```
 
 ### Summary
@@ -97,6 +99,8 @@ my_summary{quantile="0.5",error="0.03"} 286.0 1623589839194
 my_summary{quantile="0.9",error="0.03"} 470.0 1623589839194
 my_summary_sum 42582.0 1623589839194
 my_summary_count 139.0 1623589839194
+my_summary_min 3.0 1623589839194
+my_summary_max 512.0 1623589839194
 ```
 
 ### Frequency
@@ -113,16 +117,16 @@ ZIO.succeed("my_key_11") @@ aspSet
 ```
 # TYPE my_set counter
 # HELP my_set My set description.
-my_set{token="my_key_17"} 7.0 1623589839194
-my_set{token="my_key_18"} 9.0 1623589839194
-my_set{token="my_key_19"} 12.0 1623589839194
-my_set{token="my_key_13"} 6.0 1623589839194
-my_set{token="my_key_14"} 4.0 1623589839194
-my_set{token="my_key_15"} 6.0 1623589839194
-my_set{token="my_key_16"} 5.0 1623589839194
-my_set{token="my_key_10"} 10.0 1623589839194
-my_set{token="my_key_11"} 1.0 1623589839194
-my_set{token="my_key_12"} 10.0 1623589839194
+my_set{bucket="my_key_17"} 7.0 1623589839194
+my_set{bucket="my_key_18"} 9.0 1623589839194
+my_set{bucket="my_key_19"} 12.0 1623589839194
+my_set{bucket="my_key_13"} 6.0 1623589839194
+my_set{bucket="my_key_14"} 4.0 1623589839194
+my_set{bucket="my_key_15"} 6.0 1623589839194
+my_set{bucket="my_key_16"} 5.0 1623589839194
+my_set{bucket="my_key_10"} 10.0 1623589839194
+my_set{bucket="my_key_11"} 1.0 1623589839194
+my_set{bucket="my_key_12"} 10.0 1623589839194
 ```
 
 ## Serving Prometheus metrics through HTTP
@@ -142,9 +146,9 @@ The resulting string can then be used in an HTTP response that has a `Content-Ty
 ## Example HTTP server using zio-http
 
 This section shows some code fragments from the
-[example application](https://github.com/zio/zio-metrics-connectors/blob/docs/sample-app/src/main/scala/sample/SamplePrometheusStatsDApp.scala)
+[example application](https://github.com/zio/zio-metrics-connectors/blob/series/2.x/sample-app/src/main/scala/sample/SamplePrometheusStatsDApp.scala)
 that is provided in the zio-metrics-connectors repository on GitHub. In the example we
-use [zio-http](https://github.com/zio/zio-http) (version `3.0.0-RC4`) to serve the metrics.
+use [zio-http](https://github.com/zio/zio-http) (version `3.4.0`) to serve the metrics.
 
 First we define the metrics route:
 
@@ -164,7 +168,7 @@ val prometheusRoute: Route[PrometheusPublisher, Nothing] =
 We convert the route to an `HttpApp` and create an HTTP server:
 
 ```scala
-val httpApp = prometheusRoute.toHttpApp
+val httpApp: Routes[PrometheusPublisher, Nothing] = Routes(prometheusRoute)
 val runHttp = (Server.serve(httpApp) *> ZIO.never).forkDaemon
 val serverConfig = ZLayer.succeed(Server.Config.default.port(8080))
 ```
