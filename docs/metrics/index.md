@@ -49,4 +49,5 @@ Please refer to:
 * [Prometheus Client](prometheus-client.md) to learn more about the mapping from ZIO Metrics to Prometheus
 * [StatsD Client](statsd-client.md) to learn more about the mapping from ZIO Metrics to StatsD
 * [DataDog Client](datadog-client.md) to learn more about the mapping from ZIO Metrics to DataDog
+* [New Relic Client](new-relic-client.md) to learn how ZIO Metrics is sent to the New Relic Metric API
 * [Micrometer](micrometer-connector.md) to learn more about the mapping from ZIO Metrics to Micrometer
