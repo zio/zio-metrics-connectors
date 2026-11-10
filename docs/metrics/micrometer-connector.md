@@ -39,53 +39,65 @@ developers to focus on their core business logic while staying at the forefront 
 
 ## Example of usage
 
-1. Import Dependencies
+Unlike the Prometheus and StatsD connectors, the Micrometer connector does not poll on a `MetricsConfig` interval.
+It registers a listener with ZIO Metrics, so every change is forwarded to the Micrometer registry as it happens. The
+connector needs two things from your application: a Micrometer `MeterRegistry` and a `MicrometerConfig`.
 
-   In your project's build configuration, add the following dependency to import the ZIO Metrics Micrometer module:
+To use the connector:
 
-```
-   libraryDependencies += "dev.zio" %% "zio-metrics-connectors-micrometer" % latest
-```
-
-2. Choose Micrometer Backend
-
-   Decide on the backend for the Micrometer registry. You can use the built-in
-   'SimpleMeterRegistry', which stores all metrics in memory (commonly used for testing), or select another backend for
-   external integration. In this example, we'll use Prometheus as the backend.
-
-```
-   "io.micrometer" % "micrometer-registry-prometheus" % latest
-```
-
-3. Provide Micrometer and its backend Layer to your main ZIO effect
-
-   `zio-metrics-connectors-micrometer` gives you `micrometer.micrometerLayer` which initializes a bridge between ZIO Metrics and
-   Micrometer.
-   You should also provide a layer with a backend for micrometer.
-
-4. Optionally enable Core ZIO Metrics and Default JVM Metrics
-
-   Enable core ZIO Metrics by providing `Runtime.enableRuntimeMetrics` to your main application's ZIO effect. This
-   ensures that basic ZIO metrics, such as fiber counts and execution times, are collected. Additionally, include
-   `DefaultJvmMetrics.live` in your layer composition to enable default JVM metrics collection.
-
-Here's an example of how example may look like:
+1. Add the dependencies to your `build.sbt`. The first line is the connector. The second is the Prometheus registry from
+   Micrometer, which is the backend in this example:
 
 ```scala
+libraryDependencies ++= Seq(
+  "dev.zio"      %% "zio-metrics-connectors-micrometer" % "@VERSION@",
+  "io.micrometer" % "micrometer-registry-prometheus"    % "1.17.2",
+)
+```
 
-object SampleApp extends ZIOAppDefault {
+2. Choose a registry. Micrometer ships a `SimpleMeterRegistry` that keeps metrics in memory, which is useful for tests.
+   This example uses `PrometheusMeterRegistry` so that the metrics can be scraped. In Micrometer 1.17.2 it lives in the
+   `io.micrometer.prometheusmetrics` package.
 
-  def program[R, E, T]: ZIO[R, E, T] = ???
+3. Provide the layers. `micrometer.micrometerLayer` needs a `MeterRegistry` and a `MicrometerConfig` in the environment.
+   `MicrometerConfig.default` sets the summary percentile precision to 3 digits. You can change it with
+   `MicrometerConfig(summaryPercentileDigitsOfPrecision = 2)`.
 
-  override def run: ZIO[Environment & ZIOAppArgs & Scope, Any, Any] = (for {
-    _ <- program
-  } yield ())
-    .provide(
-      micrometer.micrometerLayer,
+4. Optionally enable core ZIO Metrics and the default JVM metrics. `Runtime.enableRuntimeMetrics` adds ZIO's own metrics,
+   such as fiber counts and execution times. `DefaultJvmMetrics.live` adds JVM metrics.
+
+The following application records a counter and provides all four pieces:
+
+```scala
+import zio._
+import zio.metrics.Metric
+import zio.metrics.connectors.micrometer
+import zio.metrics.connectors.micrometer.MicrometerConfig
+import zio.metrics.jvm.DefaultJvmMetrics
+
+import io.micrometer.prometheusmetrics.{PrometheusConfig, PrometheusMeterRegistry}
+
+object MicrometerApp extends ZIOAppDefault {
+
+  val requests: Metric.Counter[Any] =
+    Metric.counter("micrometer_requests", "Requests seen by Micrometer").fromConst(1L)
+
+  val program: UIO[Unit] =
+    (ZIO.unit @@ requests *> ZIO.sleep(1.second)).forever
+
+  override def run =
+    program.provide(
       ZLayer.succeed(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)),
+      ZLayer.succeed(MicrometerConfig.default),
+      micrometer.micrometerLayer,
       Runtime.enableRuntimeMetrics,
       DefaultJvmMetrics.live.unit,
     )
 }
-
 ```
+
+The registry is a `PrometheusMeterRegistry`, so the application can serve its output with `PrometheusMeterRegistry#scrape`.
+The [sample application](https://github.com/zio/zio-metrics-connectors/blob/series/2.x/sample-app/src/main/scala/sample/SampleMicrometerApp.scala)
+serves that output on `/micrometer/prometheusMetrics`. For the general approach to serving metrics over HTTP, see
+[Serving Prometheus Metrics](../how-to/serve-prometheus-metrics.md). For the Micrometer metric type mapping, see
+[Metric Type Mapping](../reference/metric-type-mapping.md).
