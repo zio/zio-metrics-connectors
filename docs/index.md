@@ -13,4 +13,5 @@ ZIO Metrics Connectors provides integration between ZIO metrics and industry-lea
 
 @PROJECT_BADGES@
 
-Get started by clicking [here](metrics/index.md#adding-zio-metrics-connectors-to-your-project)
+To add the connectors to your project, see [Adding ZIO Metrics Connectors to Your Project](metrics/index.md#adding-zio-metrics-connectors-to-your-project).
+To instrument an application and see its metrics in Prometheus, follow the [tutorial](tutorial/instrument-and-scrape.md).
