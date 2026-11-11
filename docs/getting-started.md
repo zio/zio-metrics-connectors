@@ -38,7 +38,7 @@ prometheus connector):
 
 println(s"""```""")
 if (zio.metrics.connectors.BuildInfo.isSnapshot)
-  println(s"""resolvers += Resolver.sonatypeRepo("snapshots")""")
+  println(s"""resolvers += "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/"""")
 println(s"""libraryDependencies += "dev.zio" %% "zio-metrics-connectors-prometheus" % "${zio.metrics.connectors.BuildInfo.version}"""")
 println(s"""```""")
 

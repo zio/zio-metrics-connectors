@@ -1,4 +1,4 @@
-import zio.sbt.githubactions.DependencyBot
+import zio.sbt.githubactions.{Condition, DependencyBot}
 
 import BuildHelper._
 
@@ -25,8 +25,7 @@ inThisBuild(
     pgpPublicRing  := file("/tmp/public.asc"),
     pgpSecretRing  := file("/tmp/secret.asc"),
     resolvers ++= Seq(
-      "s01 Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
-      "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+      "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/",
     ),
     scmInfo        := Some(
       ScmInfo(
@@ -38,11 +37,20 @@ inThisBuild(
 
     // zio-sbt-ci: `sbt ciGenerateGithubWorkflow` regenerates .github/workflows/ci.yml,
     // auto-approve.yml and auto-merge.yml from these settings.
-    ciEnabledBranches      := Seq("series/2.x"),
-    ciTargetScalaVersions  := targetScalaVersionsFor(core, statsd, datadog, newrelic, prometheus, micrometer).value,
+    ciEnabledBranches       := Seq("series/2.x"),
+    // README.md is generated (`docs/generateReadme`). By default the update-readme job only runs when a
+    // release is published, so badges and text stay stale until then. Also run it on pushes to series/2.x:
+    // it opens a PR only if the regenerated README differs, so a push with no README change is a no-op.
+    ciUpdateReadmeCondition := Some(
+      Condition.Expression(
+        "(github.event_name == 'release' && github.event.action == 'published') || " +
+          "(github.event_name == 'push' && github.ref == 'refs/heads/series/2.x')",
+      ),
+    ),
+    ciTargetScalaVersions   := targetScalaVersionsFor(core, statsd, datadog, newrelic, prometheus, micrometer).value,
     // Preserves the pre-migration auto-approve.yml, which approves the bare `scala-steward`
     // actor in addition to the plugin's defaults.
-    ciDependencyUpdateBots := Seq(
+    ciDependencyUpdateBots  := Seq(
       DependencyBot.Dependabot,
       DependencyBot.Renovate,
       DependencyBot.ScalaSteward("zio-scala-steward"),
