@@ -25,8 +25,7 @@ inThisBuild(
     pgpPublicRing  := file("/tmp/public.asc"),
     pgpSecretRing  := file("/tmp/secret.asc"),
     resolvers ++= Seq(
-      "s01 Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
-      "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+      "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/",
     ),
     scmInfo        := Some(
       ScmInfo(
