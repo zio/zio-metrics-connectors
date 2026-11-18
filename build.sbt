@@ -161,13 +161,15 @@ lazy val docs = project
     moduleName                                 := "zio-metrics-connectors-docs",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"      % Version.zio,
-      "dev.zio" %% "zio-http" % Version.zioHttp,
+      "dev.zio"      %% "zio"                            % Version.zio,
+      "dev.zio"      %% "zio-http"                       % Version.zioHttp,
+      "dev.zio"      %% "zio-test"                       % Version.zio,
+      "io.micrometer" % "micrometer-registry-prometheus" % Version.micrometer,
     ),
     projectName                                := "ZIO Metrics Connectors",
     mainModuleName                             := (core / moduleName).value,
     projectStage                               := ProjectStage.Development,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(core),
   )
-  .dependsOn(core)
+  .dependsOn(core, statsd, datadog, newrelic, prometheus, micrometer)
   .enablePlugins(WebsitePlugin)
