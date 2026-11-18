@@ -10,7 +10,7 @@ provide when the application starts. For a comparison of the connectors, see [Ch
 ## How Metrics Are Sent
 
 The connector reads the ZIO Metrics registry on the `MetricsConfig` interval. It converts each changed metric into a JSON
-event, as described in [Metric Type Mapping](../reference/metric-type-mapping.md#new-relic). The events wait in a queue
+event, as described in [Metric Type Mapping](./metric-type-mapping.md#new-relic). The events wait in a queue
 until one of two conditions is met. Either the queue holds `maxMetricsPerRequest` events, or `maxPublishingDelay` elapses
 after the last request. Then the connector sends the batch in one HTTPS request with the `Api-Key` header set to
 your API key.
@@ -18,7 +18,7 @@ your API key.
 ## Configure the Connector from the Environment
 
 The `NewRelicConfig.fromEnvLayer` layer reads its settings from environment variables. The API key is required, and the
-other settings have defaults. The [configuration reference](../reference/configuration.md#new-relic) lists them all.
+other settings have defaults. The [configuration reference](./configuration.md#new-relic) lists them all.
 
 Set the API key in the shell before you start the application:
 
@@ -83,6 +83,6 @@ your own endpoint URL when you need an endpoint that the connector does not list
 
 ## Next Steps
 
-The [configuration reference](../reference/configuration.md) lists every New Relic setting and default. The
-[metric type mapping](../reference/metric-type-mapping.md#new-relic) shows the events that the connector sends for each
+The [configuration reference](./configuration.md) lists every New Relic setting and default. The
+[metric type mapping](./metric-type-mapping.md#new-relic) shows the events that the connector sends for each
 metric type.

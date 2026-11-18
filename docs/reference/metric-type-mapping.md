@@ -6,7 +6,7 @@ sidebar_label: "Metric Type Mapping"
 
 Each ZIO metric type has a different shape, and each backend has its own shape for the same data. This page shows how
 every connector encodes each type, so that you can build dashboards and queries against the output. For the definition of
-each type and how to create it, see [Metric Reference](../metrics/metric-reference.md).
+each type and how to create it, see [Metric Reference](./metric-reference.md).
 
 The table below gives the output of each connector for each metric type. The Prometheus column shows the metric family
 name and the suffixes that the connector adds. The StatsD and Datadog columns show the datagram type code (`c`, `g`, or `d`).
@@ -40,7 +40,7 @@ and summaries send one gauge per bucket or quantile, distinguished by the `le` o
 gauge per observed value, distinguished by the `bucket` tag.
 
 The Datadog connector differs in one case. Histograms become `d` distributions, which carry raw values. Datadog then
-computes the percentiles itself, so the bucket boundaries are not sent. See the [Datadog page](../metrics/datadog-client.md).
+computes the percentiles itself, so the bucket boundaries are not sent. See the [Datadog page](./datadog-client.md).
 
 ## New Relic
 

@@ -100,4 +100,4 @@ The registry is a `PrometheusMeterRegistry`, so the application can serve its ou
 The [sample application](https://github.com/zio/zio-metrics-connectors/blob/series/2.x/sample-app/src/main/scala/sample/SampleMicrometerApp.scala)
 serves that output on `/micrometer/prometheusMetrics`. For the general approach to serving metrics over HTTP, see
 [Serving Prometheus Metrics](../how-to/serve-prometheus-metrics.md). For the Micrometer metric type mapping, see
-[Metric Type Mapping](../reference/metric-type-mapping.md).
+[Metric Type Mapping](./metric-type-mapping.md).

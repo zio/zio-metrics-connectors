@@ -30,9 +30,9 @@ Use the following steps to pick a connector:
 4. If your application already uses a Micrometer registry, use the Micrometer connector. Micrometer then forwards the
    metrics to whichever backend that registry supports.
 
-Each connector has its own page with the details: [Prometheus](../metrics/prometheus-client.md),
-[StatsD](../metrics/statsd-client.md), [Datadog](../metrics/datadog-client.md),
-[New Relic](../metrics/new-relic-client.md), and [Micrometer](../metrics/micrometer-connector.md).
+Each connector has its own page with the details: [Prometheus](../reference/prometheus-client.md),
+[StatsD](../reference/statsd-client.md), [Datadog](../reference/datadog-client.md),
+[New Relic](../reference/new-relic-client.md), and [Micrometer](../reference/micrometer-connector.md).
 
 Avoid providing two connectors that send to the same backend, because each metric is then reported twice. Read the
-[Datadog page](../metrics/datadog-client.md) before you combine the Datadog and StatsD layers.
+[Datadog page](../reference/datadog-client.md) before you combine the Datadog and StatsD layers.

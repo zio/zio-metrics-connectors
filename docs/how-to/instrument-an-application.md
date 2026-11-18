@@ -1,6 +1,7 @@
 ---
-id: instrumentation-examples
-title: Instrumentation Examples
+id: instrument-an-application
+title: "How to Instrument an Application"
+sidebar_label: "Instrument an Application"
 ---
 
 ```scala mdoc:invisible
@@ -13,7 +14,7 @@ The trait below is used in the
 that is provided in the zio-metrics-connectors repository on GitHub. It shows how the individual metrics can be
 configured and used.
 
-Please refer to [StatsD](statsd-client.md) and [Prometheus](prometheus-client.md) to see how the captured metrics can be
+Please refer to [StatsD](../reference/statsd-client.md) and [Prometheus](../reference/prometheus-client.md) to see how the captured metrics can be
 visualized in the supported back ends.
 
 ```scala mdoc

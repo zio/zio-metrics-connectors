@@ -92,4 +92,4 @@ each test its own metric name, or check only the series that the test records.
 :::
 
 For a unit test that does not need the Prometheus text, the Micrometer connector can use an in-memory
-`SimpleMeterRegistry`, which records values without any output format. See [Micrometer Connector](../metrics/micrometer-connector.md).
+`SimpleMeterRegistry`, which records values without any output format. See [Micrometer Connector](../reference/micrometer-connector.md).

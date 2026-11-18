@@ -96,7 +96,7 @@ valid configuration:
 | `prefix`                | `Option[String]` | `None`    | Prepended to every metric name. Include any separator.                                   |
 
 The `datadog.live` layer requires a `StatsdClient`, a `DatadogPublisherConfig`, and a `MetricsConfig`. Provide the
-`StatsdClient` with `statsd.statsdUDP` or `statsd.statsdUDS`. The [Datadog page](../metrics/datadog-client.md) shows a
+`StatsdClient` with `statsd.statsdUDP` or `statsd.statsdUDS`. The [Datadog page](./datadog-client.md) shows a
 complete setup.
 
 ## New Relic

@@ -23,7 +23,7 @@ two types of insights:
 - **Diagnostics** — Diagnostics are pre-defined data on the behavior of the application as it is running directly by the
   ZIO runtime, such as the number of fibers in the application, distribution of fiber lifetimes, and a breakdown of
   reasons for fiber termination.
-- **[Metrics](metrics/metric-reference.md)** — Metrics are used-defined data, such as the number of times a certain
+- **[Metrics](reference/metric-reference.md)** — Metrics are used-defined data, such as the number of times a certain
   section of code was executed, that are tracked by ZIO Metrics and made available either directly or through third
   party metrics solutions such as Prometheus, StatsD or Micrometer.
 
