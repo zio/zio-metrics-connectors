@@ -23,7 +23,7 @@ two types of insights:
 - **Diagnostics** — Diagnostics are pre-defined data on the behavior of the application as it is running directly by the
   ZIO runtime, such as the number of fibers in the application, distribution of fiber lifetimes, and a breakdown of
   reasons for fiber termination.
-- **[Metrics](reference/metric-reference.md)** — Metrics are used-defined data, such as the number of times a certain
+- **[Metrics](reference/metric-reference.md)** — Metrics are user-defined data, such as the number of times a certain
   section of code was executed, that are tracked by ZIO Metrics and made available either directly or through third
   party metrics solutions such as Prometheus, StatsD or Micrometer.
 
@@ -31,15 +31,11 @@ See the corresponding sections for more information on how to use each of these 
 
 ## Installation
 
-Choose and include ZIO Metrics connector in your project by adding the following to your `build.sbt` (for example
-prometheus connector):
+Add the core library and the connector for your monitoring backend to your `build.sbt`. The [Introduction](index.md#installation)
+lists the dependency line for each module.
 
-```scala mdoc:passthrough
+## Next Steps
 
-println(s"""```""")
-if (zio.metrics.connectors.BuildInfo.isSnapshot)
-  println(s"""resolvers += "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/"""")
-println(s"""libraryDependencies += "dev.zio" %% "zio-metrics-connectors-prometheus" % "${zio.metrics.connectors.BuildInfo.version}"""")
-println(s"""```""")
-
-```
+- To instrument an application and see its metrics in Prometheus, follow the [tutorial](tutorial/instrument-and-scrape.md).
+- To pick a connector, see [How to Choose a Connector](how-to/choose-a-connector.md).
+- To see how the connectors read the metrics, see [How It Works](how-it-works.md).
