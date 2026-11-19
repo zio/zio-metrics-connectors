@@ -231,15 +231,13 @@ like:
 # TYPE my_counter counter
 # HELP my_counter
 my_counter{effect="count2"} 46.0 1608982756235
+my_counter{effect="count1"} 92.0 1608982756235
 # TYPE set_gauge gauge
 # HELP set_gauge
 set_gauge 8.66004641453435 1608982756235
 # TYPE change_gauge gauge
 # HELP change_gauge
 change_gauge 90.7178906485008 1608982756235
-# TYPE my_counter counter
-# HELP my_counter
-my_counter{effect="count1"} 92.0 1608982756235
 ```
 
 Once we see the metrics being served from our example, we can set up Prometheus and Grafana to create a dashboard
