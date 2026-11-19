@@ -3,6 +3,17 @@ id: prometheus-client
 title: Prometheus Client
 ---
 
+```scala mdoc:invisible
+import java.nio.charset.StandardCharsets
+
+import zio._
+import zio.http._
+import zio.metrics.{Metric, MetricKeyType}
+import zio.metrics.connectors.{prometheus, MetricsConfig}
+import zio.metrics.connectors.prometheus.PrometheusPublisher
+import zio.metrics.jvm.DefaultJvmMetrics
+```
+
 In a normal prometheus setup we will find prometheus agents which query configured endpoints at regular intervals. The
 endpoints are HTTP endpoints serving the current metric state in an encoding defined by
 [prometheus](https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format).
@@ -19,7 +30,7 @@ Most of the ZIO metrics have a direct representation in the Prometheus encoding.
 
 A counter is represented as a prometheus counter.
 
-```scala
+```scala mdoc:compile-only
 Metric.counter("count_all", "The counter description.")
 ```
 
@@ -33,7 +44,7 @@ count_all 460.0 1623586224730
 
 A gauge is represented as a prometheus gauge.
 
-```scala
+```scala mdoc:compile-only
 Metric.gauge("adjust_gauge", "The gauge description.")
 ```
 
@@ -47,7 +58,7 @@ adjust_gauge -1.2485836762095701 1623586224730
 
 A histogram is represented as a prometheus histogram.
 
-```scala
+```scala mdoc:compile-only
 Metric.histogram(
   "my_histogram",
   "My histogram description.",
@@ -80,7 +91,7 @@ my_histogram_max 118.4 1623586224730
 
 A summary is represented as a prometheus summary.
 
-```scala
+```scala mdoc:compile-only
 Metric.summary(
   "my_summary",
   "The summary description.",
@@ -107,7 +118,7 @@ my_summary_max 512.0 1623589839194
 
 A frequency is represented by a set of prometheus counters, distinguished from each other with a label.
 
-```scala
+```scala mdoc:compile-only
 val aspSet = Metric.frequency("my_set", "My set description.")
 ZIO.succeed("my_key_10") @@ aspSet
 ZIO.succeed("my_key_11") @@ aspSet
@@ -135,7 +146,7 @@ ZIO Metrics Connectors provides a prometheus client that can be used to produce 
 request. The state is encoded and stored in the `PrometheusPublisher` class. To retrieve the prometheus encoded state,
 the application can use the `PrometheusPublisher#get` method:
 
-```scala
+```scala mdoc:compile-only
 val encodedContent: ZIO[PrometheusPublisher, Nothing, String] =
    ZIO.serviceWithZIO[PrometheusPublisher](_.get)
 ```
@@ -152,7 +163,7 @@ use [zio-http](https://github.com/zio/zio-http) (version `3.4.0`) to serve the m
 
 First we define the metrics route:
 
-```scala
+```scala mdoc:silent
 val prometheusRoute: Route[PrometheusPublisher, Nothing] =
   Method.GET / "metrics" -> handler {
     ZIO.serviceWithZIO[PrometheusPublisher](_.get).map { response =>
@@ -167,7 +178,7 @@ val prometheusRoute: Route[PrometheusPublisher, Nothing] =
 
 We convert the route to an `HttpApp` and create an HTTP server:
 
-```scala
+```scala mdoc:silent
 val httpApp: Routes[PrometheusPublisher, Nothing] = Routes(prometheusRoute)
 val runHttp = (Server.serve(httpApp) *> ZIO.never).forkDaemon
 val serverConfig = ZLayer.succeed(Server.Config.default.port(8080))
@@ -175,7 +186,7 @@ val serverConfig = ZLayer.succeed(Server.Config.default.port(8080))
 
 Now we can wire everything together in a ZIO app:
 
-```scala
+```scala mdoc:compile-only
 object SamplePrometheusApp extends ZIOAppDefault {
   // How often should the prometheus publisher update the response:
   private val metricsConfig = ZLayer.succeed(MetricsConfig(5.seconds))
@@ -197,7 +208,7 @@ object SamplePrometheusApp extends ZIOAppDefault {
         // Enable the ZIO internal metrics and the default JVM metricsConfig
         // Do NOT forget the .unit for the JVM metrics layer
         Runtime.enableRuntimeMetrics,
-        DefaultJvmMetrics.live.unit,
+        DefaultJvmMetrics.liveV2.unit,
      )
 }
 ```

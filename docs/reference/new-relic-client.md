@@ -28,7 +28,7 @@ export NEW_RELIC_API_KEY="your-api-key"
 
 Then provide the layers in your application. The following application records a counter every second:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics.Metric
 import zio.metrics.connectors.MetricsConfig
@@ -64,7 +64,7 @@ variables but always sends to the EU endpoint, so it ignores `NEW_RELIC_URI`. Re
 To set the values in code, construct a `NewRelicConfig` directly. The constructor takes the API key, the endpoint, the
 batch size, and the maximum publishing delay:
 
-```scala
+```scala mdoc:compile-only
 import java.time.Duration
 
 import zio.metrics.connectors.newrelic.{NewRelicConfig, NewRelicUri}

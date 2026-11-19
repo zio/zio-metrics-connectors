@@ -18,7 +18,7 @@ connectors need it. The Micrometer connector does not, because it receives updat
 
 `MetricsConfig` has no default instance. Create one with the interval you need:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics.connectors.MetricsConfig
 
@@ -63,7 +63,7 @@ version 2.4.0, so new code should not use them.
 
 The following values set a UDP agent with a prefix and one constant tag, and a socket path:
 
-```scala
+```scala mdoc:compile-only
 import zio.metrics.MetricLabel
 import zio.metrics.connectors.statsd.{DatagramSocketConfig, StatsdConfig}
 

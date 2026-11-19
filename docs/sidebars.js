@@ -35,6 +35,7 @@ const sidebars = {
         "how-to/instrument-an-application",
         "how-to/add-labels",
         "how-to/serve-prometheus-metrics",
+        "how-to/send-metrics-to-datadog",
         "how-to/test-metrics-locally",
       ],
     },

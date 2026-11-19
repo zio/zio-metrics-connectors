@@ -3,7 +3,7 @@ id: statsd-client
 title: "StatsD Client"
 ---
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics._
 ```
@@ -11,7 +11,7 @@ import zio.metrics._
 In a normal StatsD setup we will find a StatsD agent with an open UDP port where applications send their 
 metrics to. The format of the metrics is defined in simple [datagrams](https://docs.datadoghq.com/developers/dogstatsd/datagram_shell/?tab=metrics). 
 
-With the StatsD client creates the relevant StatsD datagrams and sends them via UDP. 
+The StatsD client creates the relevant StatsD datagrams and sends them via UDP.
 
 > The instrumented code is exactly the same as for the Prometheus instrumentation. The only difference is that 
 > another client is provided when the App is configured. 
@@ -73,63 +73,50 @@ mySummary:254|g|#quantile:0.5,error:0.03
 mySummary:441|g|#quantile:0.9,error:0.03
 ```
 
-### Sets 
+### Frequencies
 
-Sets are also reported as sets of related gauges. An additional label is used to differentiate the distinct 
-values in the set. The name of the label is as configured in the aspect used to capture the set.
+Frequencies are reported as sets of related gauges. An additional label is used to differentiate the distinct 
+values in the set. The label is named `bucket`.
 
 ```
-mySet:6|g|#token:myKey-18
-mySet:1|g|#token:myKey-19
-mySet:2|g|#token:myKey-13
-mySet:3|g|#token:myKey-14
-mySet:1|g|#token:myKey-16
-mySet:3|g|#token:myKey-10
-mySet:2|g|#token:myKey-11
-mySet:1|g|#token:myKey-12
+mySet:6|g|#bucket:my_key_18
+mySet:1|g|#bucket:my_key_19
+mySet:2|g|#bucket:my_key_13
+mySet:3|g|#bucket:my_key_14
+mySet:1|g|#bucket:my_key_16
+mySet:3|g|#bucket:my_key_10
+mySet:2|g|#bucket:my_key_11
+mySet:1|g|#bucket:my_key_12
 ```
 
 ## The ZIO Metrics StatsD example
 
-```scala
+For StatsD we do not need to start a server in the application. We provide a client that sends datagrams to a specified
+UDP destination. The following application counts a request every second. It provides the `statsdUDP` layer. Building
+this layer starts the reporting, so it is provided even though the program does not use the `StatsdClient` directly:
+
+```scala mdoc:compile-only
 import zio._
+import zio.metrics.Metric
 import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.statsd.{StatsdConfig, statsdUDP}
+import zio.metrics.connectors.statsd.{statsdUDP, StatsdConfig}
 
-import sample.InstrumentedSample
+object StatsdApp extends ZIOAppDefault {
 
-val instrumentedSample = new InstrumentedSample() {}
-```
+  val requests: Metric.Counter[Any] =
+    Metric.counter("countAll", "Requests handled").fromConst(1L)
 
-For StatsD we do need to spin up our own server. Rather we need to provide a client that can send datagrams 
-to a specified UDP destination. 
+  val program: UIO[Unit] =
+    (ZIO.unit @@ requests *> ZIO.sleep(1.second)).forever
 
-Again we need an effect that runs our instrumented code until the user presses any key:
-
-```scala 
-val execute =
-  for {
-   fiber <- instrumentedSample.program.fork
-    _ <- Console.printLine("Press Any Key") *> Console.readLine.orDie 
-    _ <- fiber.interrupt
-  } yield ExitCode.success
-```  
-
-Now, we can extend `ZIOAppDefault`, override its `run` method, and provide the `statsdUDP` layer. Building this layer starts the reporting, so it is provided even though `execute` does not use the `StatsdClient` directly:
-
-```scala 
-override def run: ZIO[ZIOAppArgs & Scope, Any, Any] =
-  execute
-    .provide(
-      ZLayer.succeed(MetricsConfig(100.millis)),
-      ZLayer.succeed(StatsdConfig("localhost", 8125)),
-      statsdUDP,
+  override def run =
+    program.provideLayer(
+      (ZLayer.succeed(MetricsConfig(100.millis)) ++ ZLayer.succeed(StatsdConfig("localhost", 8125))) >>> statsdUDP
     )
-    .orDie
+}
 ```
 
-> The layer registers a listener on the ZIO Metrics internal state. On each poll it sends the changes to StatsD as datagrams.
-> to StatsD by sending out appropriate datagrams. 
+The layer registers a listener on the ZIO Metrics internal state. On each poll it sends the changes to StatsD as datagrams.
 
 ## Configuration
 
@@ -149,7 +136,7 @@ The StatsD client takes a `StatsdConfig` when it sends datagrams over UDP, and a
 
 The `prefix` is prepended to every metric name, including each bucket line of a histogram. Any separator has to be part of the prefix. To report all metrics under `myapp.`:
 
-```scala
+```scala mdoc:compile-only
 import zio.metrics.connectors.statsd.StatsdConfig
 
 val config = StatsdConfig("localhost", 8125, prefix = Some("myapp."))
@@ -165,7 +152,7 @@ myapp.countAll:1|c
 
 The `constantTags` are added to every datagram, before the tags of the metric itself. Use them for values that are the same across the whole application, such as the environment:
 
-```scala
+```scala mdoc:compile-only
 import zio.metrics.MetricLabel
 import zio.metrics.connectors.statsd.StatsdConfig
 
@@ -186,72 +173,4 @@ A metric with its own tags, such as `region:eu`, appends them after the constant
 
 The `suffix` is appended to the end of every datagram, after the tags. The client adds it as written, so include any separator in the value yourself.
 
-## A simple StatsD / Datadog setup 
-
-The following steps describe how to set up a ZIO Metrics application reporting to [Datadog](https://www.datadoghq.com/) using a free Datadog account 
-with limited functionality. The local setup is Windows 10 with WSL and Docker installed running Ubuntu 18.04 within WSL. 
-
-In principle the setup is as follows:
-
-1. The ZIO application sends datagrams to `localhost:8125` via UDP, so we need a component picking up those datagrams. 
-1. Run a Datadog Collector within a docker image exposing a Unix socket for datagrams.
-1. Run `socat` to listen on the UDP socket 8125 and forward incoming traffic to the Unix socket. 
-1. Configure a dashboard in Datadog to visualize the metrics.
-
-### Get and run the docker based Datadog collector 
-
-Upon registration with datadoghq.com you will get an API key which is required to configure the agents collecting data. If you are planning 
-to experiment with different agents, take a note of your API key for further reference. In the steps below the API key will be referred to 
-as `$APIKEY`
-
-
-For our example we have chosen to use the docker based collector and use a unix socket to report our datagrams to that agent. 
-
-You can start the agent from the command line with 
-
-```
-docker run --name dd-agent -e DD_API_KEY=$APIKEY -e DD_SITE=datadoghq.eu \
-  -e DD_DOGSTATSD_SOCKET=/var/run/datadog/datadog.sock \
-  -v /var/run/datadog:/var/run/datadog \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  datadog/agent
-```
-
-As you can see, we require that the directory `/var/run/datadog` exists so that we can use it as a volume within the agent's docker container. The environment variable `DD_DOGSTATSD_SOCKET` tells the agent to use a unix socket to listen for datagrams. The socket file must reside within the mounted volume. 
-
-This will start the datadog collector within docker and we have a unix socket to report our datagrams to. 
-
-The next step is to create a UDP socket where our application can report its datagrams to. For our example we have chosen `socat` to forward 
-UDP traffic to our unix socket:
-
-```
-sudo socat -s -u udp-recv:8125 unix-sendto:/var/run/datadog/datadog.sock
-```
-
-> You could add the `-v` parameter to the socat call to run socat in verbose mode. That would print
-> all traffic being forwarded to the console as well. This is useful to determine whether 
-> datagrams are actually sent. 
-
-### Run the Datadog example
-
-Now, the Datadog example can be started from within the project checkout directory with 
-
-```
-sbt sampleApp/run
-```
-
-### Visualize the metrics
-
-1. Log in to your datadog account 
-1. From the menu on left hand side select `Dashboards/New Dashboard'
-1. In the upper right corner, click on the dashboard settings and select 'Import Dashboard JSON' 
-1. From the filesystem, select `$DIR/examples/statsd/ZIOMetrics.json`
-1. Confirm to override the dashboard configuration 
-1. Save the just imported dashboard 
-1. From the dashboard list select _ZIO metrics_
-1. The Datadog dashboard is displayed
-
-### Datadog dashboard 
-
-![A simple Datadog Dashboard](../img/Datadog.png)
-
+To send these datagrams to a Datadog agent, see [How to Send Metrics to Datadog](../how-to/send-metrics-to-datadog.md).

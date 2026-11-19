@@ -48,7 +48,7 @@ To use the connector:
 1. Add the dependencies to your `build.sbt`. The first line is the connector. The second is the Prometheus registry from
    Micrometer, which is the backend in this example:
 
-```scala
+```sbt
 libraryDependencies ++= Seq(
   "dev.zio"      %% "zio-metrics-connectors-micrometer" % "@VERSION@",
   "io.micrometer" % "micrometer-registry-prometheus"    % "1.17.2",
@@ -64,11 +64,11 @@ libraryDependencies ++= Seq(
    `MicrometerConfig(summaryPercentileDigitsOfPrecision = 2)`.
 
 4. Optionally enable core ZIO Metrics and the default JVM metrics. `Runtime.enableRuntimeMetrics` adds ZIO's own metrics,
-   such as fiber counts and execution times. `DefaultJvmMetrics.live` adds JVM metrics.
+   such as fiber counts and execution times. `DefaultJvmMetrics.liveV2` adds JVM metrics.
 
 The following application records a counter and provides all four pieces:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics.Metric
 import zio.metrics.connectors.micrometer
@@ -91,7 +91,7 @@ object MicrometerApp extends ZIOAppDefault {
       ZLayer.succeed(MicrometerConfig.default),
       micrometer.micrometerLayer,
       Runtime.enableRuntimeMetrics,
-      DefaultJvmMetrics.live.unit,
+      DefaultJvmMetrics.liveV2.unit,
     )
 }
 ```
