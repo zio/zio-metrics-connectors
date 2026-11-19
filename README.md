@@ -20,7 +20,7 @@ Add the core library to your `build.sbt`. All modules are published for Scala 2.
 ```sbt
 libraryDependencies ++= Seq(
   // Core library: connector settings and the shared metrics client (JVM)
-  "dev.zio" %% "zio-metrics-connectors" % "2.6.0"
+  "dev.zio" %% "zio-metrics-connectors" % "2.6.1"
 )
 ```
 
@@ -33,19 +33,19 @@ Each connector is a separate module. Add only the ones that you use:
 ```sbt
 libraryDependencies ++= Seq(
   // Prometheus: encodes metrics as Prometheus text for you to serve over HTTP (JVM)
-  "dev.zio" %% "zio-metrics-connectors-prometheus" % "2.6.0",
+  "dev.zio" %% "zio-metrics-connectors-prometheus" % "2.6.1",
 
   // StatsD: sends datagrams over UDP or a Unix domain socket (JVM)
-  "dev.zio" %% "zio-metrics-connectors-statsd" % "2.6.0",
+  "dev.zio" %% "zio-metrics-connectors-statsd" % "2.6.1",
 
   // Datadog: sends DogStatsD datagrams through a StatsD client, also adds `zio-metrics-connectors-statsd` (JVM)
-  "dev.zio" %% "zio-metrics-connectors-datadog" % "2.6.0",
+  "dev.zio" %% "zio-metrics-connectors-datadog" % "2.6.1",
 
   // New Relic: sends metrics to the New Relic Metric API over HTTPS, also adds `zio-http` and `zio-json` (JVM)
-  "dev.zio" %% "zio-metrics-connectors-newrelic" % "2.6.0",
+  "dev.zio" %% "zio-metrics-connectors-newrelic" % "2.6.1",
 
   // Micrometer: forwards every metric update to a Micrometer `MeterRegistry` (JVM)
-  "dev.zio" %% "zio-metrics-connectors-micrometer" % "2.6.0"
+  "dev.zio" %% "zio-metrics-connectors-micrometer" % "2.6.1"
 )
 ```
 
