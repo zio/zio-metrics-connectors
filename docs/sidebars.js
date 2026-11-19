@@ -36,6 +36,8 @@ const sidebars = {
         "how-to/add-labels",
         "how-to/serve-prometheus-metrics",
         "how-to/send-metrics-to-datadog",
+        "how-to/report-runtime-and-jvm-metrics",
+        "how-to/migrate-from-deprecated-layers",
         "how-to/test-metrics-locally",
       ],
     },

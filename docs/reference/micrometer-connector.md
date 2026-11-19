@@ -3,45 +3,19 @@ id: micrometer-connector
 title: Micrometer Connector
 ---
 
-ZIO Metrics has an integration with [Micrometer](https://micrometer.io/), a powerful metrics instrumentation library.
-By combining these two frameworks, developers can benefit from comprehensive and flexible metrics monitoring capabilities
-within their ZIO applications. This integration allows for efficient monitoring, gathering, and reporting of key
-performance indicators (KPIs) and other metrics for enhanced observability.
+The Micrometer connector forwards ZIO metrics to [Micrometer](https://micrometer.io/), a vendor-neutral metrics facade for
+the JVM. Micrometer then sends the metrics to whichever monitoring system its registry supports, such as Prometheus,
+Datadog, or Graphite, so you can change the backend by changing the registry and not your instrumented code.
 
-## Benefits
+## How It Works
 
-Micrometer integration offers a range of benefits that make it an excellent choice for integrating with ZIO Metrics.
-Here are some key advantages:
+The connector registers a listener with the ZIO Metrics core client. Every metric update is forwarded to the Micrometer
+registry as it happens, so the registry always reflects the current state of the application and no polling interval
+is involved.
 
-### 1. Comprehensive Metrics Support
+## Usage
 
-Micrometer provides a vendor-neutral facade for various monitoring systems, including Prometheus, Datadog, Graphite,
-and more. The same like slf4j for logs but for observability. It offers a unified API for recording metrics, allowing
-developers to easily integrate with multiple backend systems and switch between different monitoring systems without
-major code changes for its ZIO applications. You can choose whatever you want as monitoring tool - Grafana,
-Prometheus, and Jaeger and so on.
-
-### 2. Real-time Metrics Updates
-
-By leveraging the low-level integration with the ZIO Metrics core client listener, the module provides immediate
-updates to Micrometer whenever metric changes occur within the ZIO application. This real-time synchronization
-ensures that the metrics reported by Micrometer accurately reflect the current state of the application, enabling
-timely monitoring and analysis.
-
-### 3. Always on trend of standards
-
-Integration with Micrometer ensures that developers are always on trend of standards with metrics format changes and
-can take advantage of the latest updates and improvements in the monitoring ecosystem. By relying on Micrometer as
-the integration layer, developers gain compatibility with the latest monitoring systems, future-proof their
-monitoring infrastructure, benefit from community-driven updates and support, and simplify maintenance and upgrades.
-This integration provides a reliable and scalable solution for metrics monitoring in ZIO-based applications, allowing
-developers to focus on their core business logic while staying at the forefront of monitoring technology.
-
-## Example of usage
-
-Unlike the Prometheus and StatsD connectors, the Micrometer connector does not poll on a `MetricsConfig` interval.
-It registers a listener with ZIO Metrics, so every change is forwarded to the Micrometer registry as it happens. The
-connector needs two things from your application: a Micrometer `MeterRegistry` and a `MicrometerConfig`.
+The connector needs two things from your application: a Micrometer `MeterRegistry` and a `MicrometerConfig`.
 
 To use the connector:
 

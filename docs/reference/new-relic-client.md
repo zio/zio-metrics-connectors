@@ -15,6 +15,13 @@ until one of two conditions is met. Either the queue holds `maxMetricsPerRequest
 after the last request. Then the connector sends the batch in one HTTPS request with the `Api-Key` header set to
 your API key.
 
+The queue holds up to twice `maxMetricsPerRequest` events. When the queue is full, the connector waits for room
+before it queues more events.
+
+The connector creates its own [zio-http](https://zio.dev/zio-http/) client with the default settings and uses `zio-json`
+to build the request body. Both come with the `zio-metrics-connectors-newrelic` module as transitive dependencies. The
+application cannot supply its own client, so the client's default TLS and proxy settings apply.
+
 ## Configure the Connector from the Environment
 
 The `NewRelicConfig.fromEnvLayer` layer reads its settings from environment variables. The API key is required, and the
