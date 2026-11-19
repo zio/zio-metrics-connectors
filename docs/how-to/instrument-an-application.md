@@ -9,13 +9,9 @@ import zio._
 import zio.metrics._
 ```
 
-The trait below is used in the
-[zio metrics sample application](https://github.com/zio/zio-metrics-connectors/blob/series/2.x/sample-app/src/main/scala/sample/SamplePrometheusStatsDApp.scala)
-that is provided in the zio-metrics-connectors repository on GitHub. It shows how the individual metrics can be
-configured and used.
+This guide shows how to define one metric of each type and update them from a running program. For the definition of each metric type, see [Metric Reference](../reference/metric-reference.md). To see how the captured metrics are reported, see [StatsD](../reference/statsd-client.md) and [Prometheus](../reference/prometheus-client.md).
 
-Please refer to [StatsD](../reference/statsd-client.md) and [Prometheus](../reference/prometheus-client.md) to see how the captured metrics can be
-visualized in the supported back ends.
+The following trait is used in the [zio metrics sample application](https://github.com/zio/zio-metrics-connectors/blob/series/2.x/sample-app/src/main/scala/sample/SamplePrometheusStatsDApp.scala) of the repository:
 
 ```scala mdoc
 trait InstrumentedSample {

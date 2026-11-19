@@ -117,13 +117,7 @@ The layer polls the ZIO Metrics registry on the `MetricsConfig` interval. On eac
 
 The StatsD client takes a `StatsdConfig` when it sends datagrams over UDP, and a `DatagramSocketConfig` when it sends them to a unix domain socket. The `statsdUDP` and `statsdUDS` layers read these settings. They also read `MetricsConfig`, which sets how often the metrics registry is polled.
 
-| Field          | Type                | Default  | Description                                 |
-| -------------- | ------------------- | -------- | ------------------------------------------- |
-| `host`         | `String`            | required | Host name of the StatsD agent.              |
-| `port`         | `Int`               | required | Port of the StatsD agent.                   |
-| `prefix`       | `Option[String]`    | `None`   | Text prepended to every metric name.        |
-| `constantTags` | `List[MetricLabel]` | `Nil`    | Tags added to every datagram.               |
-| `suffix`       | `Option[String]`    | `None`   | Text appended to the end of every datagram. |
+Every field and default of `StatsdConfig` and `DatagramSocketConfig` is listed in the [configuration reference](./configuration.md#statsd).
 
 `StatsdConfig.default` points to `localhost` on port `8125`. `DatagramSocketConfig` has a `path` field instead of `host` and `port`, and it accepts the same `prefix`, `constantTags` and `suffix` fields. If a datagram cannot be sent, the client drops it without raising an error.
 

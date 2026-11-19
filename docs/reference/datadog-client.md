@@ -111,46 +111,13 @@ object DatadogApp extends ZIOAppDefault {
 The `datadog.live` layer needs a `StatsdClient`. The public layers that provide one, `statsd.statsdUDP` and `statsd.statsdUDS`, also start their own sender for every metric. With the combination above, counters, gauges, summaries, and frequencies are therefore sent once by each sender, and the Datadog agent receives two datagrams per update. With default settings the two datagrams are identical. Histograms are sent as `le` gauges by the StatsD sender and as `d` distributions by the Datadog sender.
 :::
 
-Alternatively, we can send datagrams over a unix domain socket (UDS) with the `statsd.statsdUDS` layer. It takes a `statsd.DatagramSocketConfig` instead of a `StatsdConfig`. This can be used with the Datadog agent starting with version 6.0.0 on the Linux platform.
-
-```scala mdoc:compile-only
-import zio._
-import zio.metrics.Metric
-import zio.metrics.connectors.{datadog, statsd, MetricsConfig}
-
-object DatadogUdsApp extends ZIOAppDefault {
-
-  val requests: Metric.Counter[Any] =
-    Metric.counter("dd_requests", "Requests handled").fromConst(1L)
-
-  val program: UIO[Unit] =
-    (ZIO.unit @@ requests *> ZIO.sleep(1.second)).forever
-
-  override def run =
-    program.provide(
-      ZLayer.succeed(MetricsConfig(100.millis)),
-      ZLayer.succeed(statsd.DatagramSocketConfig("/var/run/datadog/datadog.sock")),
-      ZLayer.succeed(datadog.DatadogPublisherConfig()),
-      statsd.statsdUDS,
-      datadog.live,
-    )
-}
-```
+To send datagrams over a unix domain socket instead of UDP, use `statsd.statsdUDS` with a `statsd.DatagramSocketConfig`, as shown in [How to Send Metrics to Datadog](../how-to/send-metrics-to-datadog.md). This can be used with the Datadog agent starting with version 6.0.0 on the Linux platform.
 
 ## Configuration
 
 The `datadog.live` layer reads a `DatadogPublisherConfig`, and it needs a `StatsdClient` to send the datagrams. That client comes from the `statsd.statsdUDP` or `statsd.statsdUDS` layer. The layer also reads `MetricsConfig`, which sets how often the metrics registry is polled.
 
-| Field                   | Type                | Default  | Description                                                               |
-| ----------------------- | ------------------- | -------- | ------------------------------------------------------------------------- |
-| `histogramSendInterval` | `Option[Duration]`  | `None`   | How often histograms are sent. Defaults to the `MetricsConfig` interval.  |
-| `maxBatchedMetrics`     | `Int`               | `10`     | Maximum number of metrics batched into one send. Affects packet size.     |
-| `maxQueueSize`          | `Int`               | `100000` | Maximum number of metrics stored in the queue. Affects memory use.        |
-| `containerId`           | `Option[String]`    | `None`   | Docker container ID, appended to every datagram as a suffix.              |
-| `entityId`              | `Option[String]`    | `None`   | Entity ID, sent as the `dd.internal.entity_id` tag.                       |
-| `sendUnchanged`         | `Boolean`           | `false`  | Whether metrics that did not change since the last poll are sent as well. |
-| `constantTags`          | `List[MetricLabel]` | `Nil`    | Tags added to every datagram.                                             |
-| `prefix`                | `Option[String]`    | `None`   | Text prepended to every metric name.                                      |
+Every field and default of `DatadogPublisherConfig` is listed in the [configuration reference](./configuration.md#datadog).
 
 The older `DatadogConfig` is deprecated since version 2.4.0. It has no `prefix` or `constantTags` fields, so use `DatadogPublisherConfig` instead.
 

@@ -28,10 +28,7 @@ val metricsConfig: ZLayer[Any, Nothing, MetricsConfig] =
 
 ## Prometheus
 
-The Prometheus connector has no configuration type. Its layers are:
-
-- `prometheus.publisherLayer`, which provides a `PrometheusPublisher`.
-- `prometheus.prometheusLayer`, which requires a `MetricsConfig` and a `PrometheusPublisher`.
+The Prometheus connector has no configuration type. Its layers are `prometheus.publisherLayer`, which provides a `PrometheusPublisher`, and `prometheus.prometheusLayer`, which requires a `MetricsConfig` and a `PrometheusPublisher`.
 
 `PrometheusPublisher` has two methods. `get` returns the current Prometheus text, and `set` replaces it. The application
 reads `get` in an HTTP route. See [Serve Prometheus Metrics](../how-to/serve-prometheus-metrics.md).

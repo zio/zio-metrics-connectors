@@ -12,13 +12,13 @@ The connectors differ in two ways. The first is direction: a pull connector wait
 while a push connector sends the data to the backend. The second is what your application must provide: some connectors
 need an HTTP endpoint, others need a network address or an API key.
 
-| Connector   | Direction | How Data Leaves the App                       | Layers You Provide                                              |
-| ----------- | --------- | --------------------------------------------- | --------------------------------------------------------------- |
-| Prometheus  | Pull      | Your HTTP route returns the publisher text    | `publisherLayer`, `prometheusLayer`, `MetricsConfig`            |
-| StatsD      | Push      | UDP datagrams, or a Unix domain socket        | `statsdUDP` or `statsdUDS`, `StatsdConfig` or `DatagramSocketConfig`, `MetricsConfig` |
-| Datadog     | Push      | DogStatsD datagrams to a Datadog agent        | A StatsD client layer, `datadog.live`, `DatadogPublisherConfig`, `MetricsConfig` |
-| New Relic   | Push      | HTTPS requests to the New Relic Metric API    | `newRelicLayer`, `NewRelicConfig`, `MetricsConfig`              |
-| Micrometer  | In-process | Listener that updates a Micrometer registry  | `micrometerLayer`, a `MeterRegistry`, `MicrometerConfig`        |
+| Connector | Direction | How Data Leaves the App |
+| ----------- | --------- | --------------------------------------------- |
+| Prometheus | Pull | Your HTTP route returns the publisher text |
+| StatsD | Push | UDP datagrams, or a Unix domain socket |
+| Datadog | Push | DogStatsD datagrams to a Datadog agent |
+| New Relic | Push | HTTPS requests to the New Relic Metric API |
+| Micrometer | In-process | Listener that updates a Micrometer registry |
 
 Use the following steps to pick a connector:
 

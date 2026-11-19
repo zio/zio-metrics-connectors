@@ -4,19 +4,7 @@ title: "How ZIO Metrics Connectors Work"
 sidebar_label: "How It Works"
 ---
 
-ZIO Metrics allows you to apply special aspects to the workflows of any ZIO based application. This is called
-instrumentation. The type of the original ZIO workflow will not change by adding one or more aspects to it. (From here
-on, we'll use the word _effect_ instead of workflow.)
-
-Whenever an instrumented effect executes, all the aspects will be executed as well. Each of the aspects will capture
-some data of interest and update some Metric internal state. Which data will be captured and how it can be used later on
-is dependent on the metric type associated with the aspect. Capturing metrics data is usually called 'measuring'.
-
-Metrics are normally collected to be displayed in an application like [Grafana](https://grafana.com/) or a cloud based
-platform like [Datadog](https://docs.datadoghq.com/) or [NewRelic](https://newrelic.com).
-In order to support such a range of different platforms, the metric state is kept in an internal data structure which is
-optimized to update as efficiently as possible. The data required by the collecting platforms is generated only when it
-is required.
+A connector reads the metric state that ZIO keeps in its metrics registry. The state is kept in an internal data structure that is optimized to update as efficiently as possible, and the data that a backend needs is generated only when it is required. To define and apply metrics, see [Metric Reference](reference/metric-reference.md).
 
 > Changing which platform the metrics are reported to has no impact on the application at all. Once instrumented
 > properly, the decision where to report to happens 'at the end of the world', that is, in the ZIO application's main
@@ -24,13 +12,7 @@ is required.
 
 ## Polling and Listening
 
-A connector reads the ZIO Metrics registry in one of two ways:
-
-- The Prometheus, StatsD, Datadog, and New Relic connectors poll the registry on the interval of a `MetricsConfig`. The
-  Prometheus connector republishes every metric on each poll. The StatsD, Datadog, and New Relic connectors skip metrics
-  that did not change since the last poll, and Datadog sends them anyway when `sendUnchanged` is `true`.
-- The Micrometer connector registers a listener, so every change reaches the Micrometer registry as it happens. It
-  does not need a `MetricsConfig`.
+The Prometheus, StatsD, Datadog, and New Relic connectors poll the registry on the interval of a `MetricsConfig`. The Prometheus connector republishes every metric on each poll. The StatsD, Datadog, and New Relic connectors skip metrics that did not change since the last poll, and Datadog sends them anyway when `sendUnchanged` is `true`. The Micrometer connector registers a listener, so every change reaches the Micrometer registry as it happens, and it does not need a `MetricsConfig`.
 
 The Datadog connector also listens, for histograms only: it queues each recorded histogram value and sends it as a
 distribution, while it polls for every other metric type.

@@ -13,14 +13,11 @@ The connector registers a listener with the ZIO Metrics core client. Every metri
 registry as it happens, so the registry always reflects the current state of the application and no polling interval
 is involved.
 
-## Usage
+## Layers and Configuration
 
-The connector needs two things from your application: a Micrometer `MeterRegistry` and a `MicrometerConfig`.
+The connector needs a Micrometer `MeterRegistry` and a `MicrometerConfig`. The `micrometer.micrometerLayer` layer requires both in its environment. `MicrometerConfig.default` sets `summaryPercentileDigitsOfPrecision` to 3, and `MicrometerConfig(summaryPercentileDigitsOfPrecision = 2)` changes it. Micrometer ships a `SimpleMeterRegistry` that keeps metrics in memory, which is useful for tests. `Runtime.enableRuntimeMetrics` and `DefaultJvmMetrics.liveV2` are optional layers that add the ZIO runtime and JVM metrics.
 
-To use the connector:
-
-1. Add the dependencies to your `build.sbt`. The first line is the connector. The second is the Prometheus registry from
-   Micrometer, which is the backend in this example:
+Add the connector and a registry for your backend to your `build.sbt`. This example uses the Prometheus registry from Micrometer, which lives in the `io.micrometer.prometheusmetrics` package in Micrometer 1.17.2:
 
 ```sbt
 libraryDependencies ++= Seq(
@@ -29,18 +26,7 @@ libraryDependencies ++= Seq(
 )
 ```
 
-2. Choose a registry. Micrometer ships a `SimpleMeterRegistry` that keeps metrics in memory, which is useful for tests.
-   This example uses `PrometheusMeterRegistry` so that the metrics can be scraped. In Micrometer 1.17.2 it lives in the
-   `io.micrometer.prometheusmetrics` package.
-
-3. Provide the layers. `micrometer.micrometerLayer` needs a `MeterRegistry` and a `MicrometerConfig` in the environment.
-   `MicrometerConfig.default` sets the summary percentile precision to 3 digits. You can change it with
-   `MicrometerConfig(summaryPercentileDigitsOfPrecision = 2)`.
-
-4. Optionally enable core ZIO Metrics and the default JVM metrics. `Runtime.enableRuntimeMetrics` adds ZIO's own metrics,
-   such as fiber counts and execution times. `DefaultJvmMetrics.liveV2` adds JVM metrics.
-
-The following application records a counter and provides all four pieces:
+The following application records a counter and provides all the layers:
 
 ```scala mdoc:compile-only
 import zio._
