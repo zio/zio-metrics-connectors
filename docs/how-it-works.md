@@ -13,7 +13,7 @@ some data of interest and update some Metric internal state. Which data will be 
 is dependent on the metric type associated with the aspect. Capturing metrics data is usually called 'measuring'.
 
 Metrics are normally collected to be displayed in an application like [Grafana](https://grafana.com/) or a cloud based
-platform like [DatadogHQ](https://docs.datadoghq.com/) or [NewRelic](https://newrelic.com).
+platform like [Datadog](https://docs.datadoghq.com/) or [NewRelic](https://newrelic.com).
 In order to support such a range of different platforms, the metric state is kept in an internal data structure which is
 optimized to update as efficiently as possible. The data required by the collecting platforms is generated only when it
 is required.

@@ -41,7 +41,7 @@ libraryDependencies ++= Seq(
   // Datadog: sends DogStatsD datagrams through a StatsD client, also adds `zio-metrics-connectors-statsd` (JVM)
   "dev.zio" %% "zio-metrics-connectors-datadog" % "@VERSION@",
 
-  // New Relic: sends metrics to the New Relic Metric API over HTTPS, also adds zio-http and zio-json (JVM)
+  // New Relic: sends metrics to the New Relic Metric API over HTTPS, also adds `zio-http` and `zio-json` (JVM)
   "dev.zio" %% "zio-metrics-connectors-newrelic" % "@VERSION@",
 
   // Micrometer: forwards every metric update to a Micrometer `MeterRegistry` (JVM)

@@ -19,7 +19,7 @@ val effect: ZIO[Any, Throwable, Double] = ZIO.succeed(1.0)
 val effectWithMeasurement: ZIO[Any, Throwable, Double] = effect @@ metric
 ```
 
-### Name, description and labels
+### Name, Description, and Labels
 
 Every metric has a name and optionally a description. The name may be augmented by zero or more `Label`s (sometimes
 called `tag`s). Labels are useful, because some reporting platforms support them and provide aggregation mechanisms
@@ -28,7 +28,7 @@ for them.
 > For example, think of a counter that counts how often a particular service has been invoked. If the application is
 > deployed across several hosts, we can model our counter with the name `my_service` and an additional label
 > `(host, ${hostname})`. With this definition we can see the number of executions for each host, but we can also
-> create a query in Grafana or DatadogHQ to visualize the aggregated value over all hosts. Using more than one label
+> create a query in Grafana or Datadog to visualize the aggregated value over all hosts. Using more than one label
 > allows us to create visualizations across any combination of the labels.
 
 Name and description are always given as part of the metric constructor, labels can be added via one of the `tagged`
@@ -45,7 +45,7 @@ val effectWithTaggedMeasurement = effect @@ countRequests.tagged("path", path)
 
 We recommend you follow the [Prometheus best practices](https://prometheus.io/docs/practices/naming/) guide for the metric name and labels.
 
-### Supported type
+### Supported Type
 
 Every `Metric` has the type parameter `In` which indicates what types of values can be measured by the metric. When
 applying the metric as an aspect to an effect, the metric's `In` type must be compatible with the output type of the
@@ -69,12 +69,12 @@ val occurrenceCounter: Metric.Counter[Any] =
   Metric.counter("my_metric").fromConst(1L)
 ```
 
-### Measuring durations
+### Measuring Durations
 
 To measure how long an effect takes, we can use methods `trackDuration` and `trackDurationWith`. See the histogram
 section below for an example.
 
-### Measuring failures
+### Measuring Failures
 
 Normally, we only measure effects that succeed. To measure an effect that failed, we can use methods like `trackAll`,
 `trackDefectWith`, `trackErrorWith` and `trackSuccessWith`. For example `trackError` lets you measure the error output
@@ -89,6 +89,8 @@ val errorMeasurement = effect @@ countAllErrors
 ```
 
 ## Metric Types
+
+Each metric type measures a different kind of value. The following sections show how to create each type and how to apply it.
 
 ### Counter
 
@@ -207,7 +209,7 @@ val latencyHistogram: Metric.Histogram[Double] =
 
 #### Examples
 
-Create a histogram with 10 buckets: `0..100` in steps of `10` and `Double.MaxValue`. It can be applied to effects
+Create a histogram with 11 buckets: `0..90` in steps of `10` and `Double.MaxValue`. It can be applied to effects
 yielding a `Double`.
 
 ```scala mdoc:silent
@@ -259,7 +261,7 @@ Level Agreements.
 
 The ZIO Metrics API also allows summaries to be configured with an error margin `e`. The error margin is applied to the
 count of values, so that a quantile `q` for a set of size `s` resolves to value `v` if the number `n` of values less or
-equal to `v` is `(1 -e)q * s <= n <= (1+e)q`.
+equal to `v` is `(1 - e) * q * s <= n <= (1 + e) * q * s`.
 
 A summary can be created with the `summary` method:
 

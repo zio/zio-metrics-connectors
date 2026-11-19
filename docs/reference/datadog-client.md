@@ -3,15 +3,15 @@ id: datadog-client
 title: "Datadog Client"
 ---
 
-In a normal DataDog setup we will find a DataDog agent with an open UDP port where applications send their
+In a normal Datadog setup we will find a Datadog agent with an open UDP port where applications send their
 metrics to. The format of the metrics is defined by the [DogStatsD protocol](https://docs.datadoghq.com/developers/dogstatsd/datagram_shell/?tab=metrics).
 
-With the DataDog client zio metrics creates the relevant DogStatsD datagrams and sends them via UDP.
+The Datadog connector creates the relevant DogStatsD datagrams and sends them through a `StatsdClient`, over UDP or a Unix domain socket.
 
 > The instrumented code is exactly the same as for the Prometheus instrumentation. The only difference is that
 > another client is provided when the App is configured.
 
-## ZIO metrics in DogStatsD
+## ZIO Metrics in DogStatsD
 
 DogStatsD normally has its own definition how histograms and summaries are configured. In the default setup this
 is defined in the config file of the statsd agent. Furthermore, a StatsD Histogram is more or less the
@@ -19,12 +19,12 @@ equivalent of a Prometheus summary.
 
 However, whenever the desired quantiles need to change, the config must be adjusted and the agent restarted.
 
-Therefore, the ZIO Metrics Datadog client maps the more complex metrics to a set of related gauges. This allows us to achieve
+Therefore, the ZIO Metrics Datadog connector maps summaries and frequencies to sets of related gauges, and histograms to distributions. This allows us to achieve
 the same visualization without the need to adjust any of the agents config files.
 
 ### Counter
 
-Counters are reported periodically within a configurable time interval.
+Counters are reported periodically within a configurable time interval, as in:
 
 ```
 countAll:1|c
@@ -32,7 +32,7 @@ countAll:1|c
 
 ### Gauge
 
-Gauges are reported periodically within a configurable time interval.
+Gauges are reported periodically within a configurable time interval, as in:
 
 ```
 adjustGauge:32.2787317766752|g
@@ -41,7 +41,7 @@ adjustGauge:32.2787317766752|g
 ### Histogram
 
 A histogram is reported as a datadog distribution. Each submitted value is queued and sent at the next flush, which runs every `histogramSendInterval`. Values for the same histogram that are queued together are sent in one datagram. The bucket configuration is 
-ignored in this case, as DataDog expects raw values to be recorded. 
+ignored in this case, as Datadog expects raw values to be recorded. 
 
 ```
 myHistogram:3|d
@@ -75,7 +75,7 @@ mySet:2|g|#bucket:my_key_11
 mySet:1|g|#bucket:my_key_12
 ```
 
-## The ZIO metrics DataDog example
+## The ZIO Metrics Datadog Example
 
 The Datadog connector sends its datagrams through a `StatsdClient`. We need a client that can send them to a specified
 UDP destination or a unix domain socket, and we do not need to start a server in the application. The following

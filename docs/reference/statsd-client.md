@@ -3,11 +3,6 @@ id: statsd-client
 title: "StatsD Client"
 ---
 
-```scala mdoc:compile-only
-import zio._
-import zio.metrics._
-```
-
 In a normal StatsD setup we will find a StatsD agent with an open UDP port where applications send their 
 metrics to. The format of the metrics is defined in simple [datagrams](https://docs.datadoghq.com/developers/dogstatsd/datagram_shell/?tab=metrics). 
 
@@ -16,7 +11,7 @@ The StatsD client creates the relevant StatsD datagrams and sends them via UDP.
 > The instrumented code is exactly the same as for the Prometheus instrumentation. The only difference is that 
 > another client is provided when the App is configured. 
 
-## ZIO metrics in StatsD
+## ZIO Metrics in StatsD
 
 StatsD normally has its own definition how histograms and summaries are configured. In the default setup this 
 is defined in the config file of the statsd agent. Furthermore, a StatsD Histogram is more or less the
@@ -29,7 +24,7 @@ the same visualization without the need to adjust any of the agents config files
 
 ### Counter 
 
-Upon the change of a counter a datagram is sent with the delta to the previous value reported. 
+On each poll, a datagram is sent with the change since the previous poll, as in:
 
 ```
 countAll:1|c

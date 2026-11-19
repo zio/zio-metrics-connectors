@@ -1,7 +1,7 @@
 ---
 id: test-metrics-locally
 title: "How to Check Metrics Locally and in Tests"
-sidebar_label: "Test Metrics Locally"
+sidebar_label: "Check Metrics Locally and in Tests"
 ---
 
 You can check which metrics an application records without running a monitoring backend. The Prometheus publisher keeps
