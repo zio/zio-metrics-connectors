@@ -26,8 +26,9 @@ is required.
 
 A connector reads the ZIO Metrics registry in one of two ways:
 
-- The Prometheus, StatsD, Datadog, and New Relic connectors poll the registry on the interval of a `MetricsConfig` and
-  report what changed since the last poll.
+- The Prometheus, StatsD, Datadog, and New Relic connectors poll the registry on the interval of a `MetricsConfig`. The
+  Prometheus connector republishes every metric on each poll. The StatsD, Datadog, and New Relic connectors skip metrics
+  that did not change since the last poll, and Datadog sends them anyway when `sendUnchanged` is `true`.
 - The Micrometer connector registers a listener, so every change reaches the Micrometer registry as it happens. It
   does not need a `MetricsConfig`.
 
