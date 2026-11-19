@@ -116,7 +116,7 @@ object StatsdApp extends ZIOAppDefault {
 }
 ```
 
-The layer registers a listener on the ZIO Metrics internal state. On each poll it sends the changes to StatsD as datagrams.
+The layer polls the ZIO Metrics registry on the `MetricsConfig` interval. On each poll it sends the metrics that changed since the previous poll to StatsD as datagrams.
 
 ## Configuration
 

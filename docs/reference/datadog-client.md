@@ -40,7 +40,7 @@ adjustGauge:32.2787317766752|g
 
 ### Histogram
 
-A histogram is reported as a datadog distribution whenever a new value is submitted. The bucket configuration is 
+A histogram is reported as a datadog distribution. Each submitted value is queued and sent at the next flush, which runs every `histogramSendInterval`. Values for the same histogram that are queued together are sent in one datagram. The bucket configuration is 
 ignored in this case, as DataDog expects raw values to be recorded. 
 
 ```
@@ -108,7 +108,7 @@ object DatadogApp extends ZIOAppDefault {
 ```
 
 :::warning[Each metric is sent twice with this layer combination]
-The `datadog.live` layer needs a `StatsdClient`. The public layers that provide one, `statsd.statsdUDP` and `statsd.statsdUDS`, also start their own sender for every metric. With the combination above, each metric update is therefore sent once by each sender, and the Datadog agent receives two identical datagrams per update.
+The `datadog.live` layer needs a `StatsdClient`. The public layers that provide one, `statsd.statsdUDP` and `statsd.statsdUDS`, also start their own sender for every metric. With the combination above, counters, gauges, summaries, and frequencies are therefore sent once by each sender, and the Datadog agent receives two datagrams per update. With default settings the two datagrams are identical. Histograms are sent as `le` gauges by the StatsD sender and as `d` distributions by the Datadog sender.
 :::
 
 Alternatively, we can send datagrams over a unix domain socket (UDS) with the `statsd.statsdUDS` layer. It takes a `statsd.DatagramSocketConfig` instead of a `StatsdConfig`. This can be used with the Datadog agent starting with version 6.0.0 on the Linux platform.
