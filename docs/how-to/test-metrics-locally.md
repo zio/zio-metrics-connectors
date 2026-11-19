@@ -1,7 +1,7 @@
 ---
 id: test-metrics-locally
 title: "How to Check Metrics Locally and in Tests"
-sidebar_label: "Test Metrics Locally"
+sidebar_label: "Check Metrics Locally and in Tests"
 ---
 
 You can check which metrics an application records without running a monitoring backend. The Prometheus publisher keeps
@@ -13,7 +13,7 @@ the publisher in a local program and in a ZIO Test spec.
 The publisher refreshes on the `MetricsConfig` interval, so a program must wait longer than one interval before it reads
 the text. The following program uses an interval of 100 milliseconds and waits 300 milliseconds before it reads:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics.Metric
 import zio.metrics.connectors.{prometheus, MetricsConfig}
@@ -53,7 +53,7 @@ local_requests 1.0 1794253765088
 
 A ZIO Test spec can use the same publisher. The spec reads the text and asserts that the expected series is present:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics.Metric
 import zio.metrics.connectors.{prometheus, MetricsConfig}
@@ -92,4 +92,4 @@ each test its own metric name, or check only the series that the test records.
 :::
 
 For a unit test that does not need the Prometheus text, the Micrometer connector can use an in-memory
-`SimpleMeterRegistry`, which records values without any output format. See [Micrometer Connector](../metrics/micrometer-connector.md).
+`SimpleMeterRegistry`, which records values without any output format. See [Micrometer Connector](../reference/micrometer-connector.md).

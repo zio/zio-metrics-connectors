@@ -12,7 +12,7 @@ the service or the route. This guide shows how to attach a fixed label to a metr
 `Metric#tagged` returns a copy of the metric with one more label. Every series of that metric carries the label, so
 the label is set once where the metric is defined:
 
-```scala
+```scala mdoc:silent
 import zio._
 import zio.metrics.Metric
 
@@ -29,7 +29,7 @@ Call `Metric#tagged` again to add another label. Each call returns a new metric 
 To set a label that depends on the work being done, apply a tagged copy of the metric at the call site. The next
 block records one request for each route it handles:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics.Metric
 

@@ -18,7 +18,7 @@ connectors need it. The Micrometer connector does not, because it receives updat
 
 `MetricsConfig` has no default instance. Create one with the interval you need:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.metrics.connectors.MetricsConfig
 
@@ -28,10 +28,7 @@ val metricsConfig: ZLayer[Any, Nothing, MetricsConfig] =
 
 ## Prometheus
 
-The Prometheus connector has no configuration type. Its layers are:
-
-- `prometheus.publisherLayer`, which provides a `PrometheusPublisher`.
-- `prometheus.prometheusLayer`, which requires a `MetricsConfig` and a `PrometheusPublisher`.
+The Prometheus connector has no configuration type. Its layers are `prometheus.publisherLayer`, which provides a `PrometheusPublisher`, and `prometheus.prometheusLayer`, which requires a `MetricsConfig` and a `PrometheusPublisher`.
 
 `PrometheusPublisher` has two methods. `get` returns the current Prometheus text, and `set` replaces it. The application
 reads `get` in an HTTP route. See [Serve Prometheus Metrics](../how-to/serve-prometheus-metrics.md).
@@ -63,7 +60,7 @@ version 2.4.0, so new code should not use them.
 
 The following values set a UDP agent with a prefix and one constant tag, and a socket path:
 
-```scala
+```scala mdoc:compile-only
 import zio.metrics.MetricLabel
 import zio.metrics.connectors.statsd.{DatagramSocketConfig, StatsdConfig}
 
@@ -96,7 +93,7 @@ valid configuration:
 | `prefix`                | `Option[String]` | `None`    | Prepended to every metric name. Include any separator.                                   |
 
 The `datadog.live` layer requires a `StatsdClient`, a `DatadogPublisherConfig`, and a `MetricsConfig`. Provide the
-`StatsdClient` with `statsd.statsdUDP` or `statsd.statsdUDS`. The [Datadog page](../metrics/datadog-client.md) shows a
+`StatsdClient` with `statsd.statsdUDP` or `statsd.statsdUDS`. The [Datadog page](./datadog-client.md) shows a
 complete setup.
 
 ## New Relic

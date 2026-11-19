@@ -14,7 +14,7 @@ The tutorial uses sbt and assumes you know how to write a basic `ZIOAppDefault`.
 
 We need the Prometheus connector to encode the metrics, and zio-http to serve them. Add both to your `build.sbt`:
 
-```scala
+```sbt
 libraryDependencies ++= Seq(
   "dev.zio" %% "zio-metrics-connectors-prometheus" % "@VERSION@",
   "dev.zio" %% "zio-http"                          % "3.4.0",
@@ -28,7 +28,7 @@ The connector brings in the core ZIO Metrics library, so no other dependency is 
 We define a counter that counts processed orders and a gauge that shows how many orders are waiting. A metric is a value
 that you apply to an effect with `@@`. The effect keeps its type, so applying a metric does not change how the code runs. The `OrderService` object defines both metrics:
 
-```scala
+```scala mdoc:silent
 import zio._
 import zio.metrics.Metric
 
@@ -55,7 +55,7 @@ next steps.
 The connector stores the encoded metrics in a `PrometheusPublisher`. The HTTP route reads that text with
 `PrometheusPublisher#get` and returns it with the content type that Prometheus expects:
 
-```scala
+```scala mdoc:silent
 import java.nio.charset.StandardCharsets
 
 import zio._
@@ -82,7 +82,7 @@ The `text/plain; version=0.0.4` content type identifies the Prometheus text form
 
 We run the workload in a background fiber. Each second it processes five orders, then sets the queue depth to 3:
 
-```scala
+```scala mdoc:silent
 import zio._
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 
@@ -99,7 +99,7 @@ val workload: UIO[Unit] =
 The application provides the server, the metrics layers, and the publisher. The `MetricsConfig` sets how often the connector
 copies the metrics into the publisher. Five seconds is enough for this tutorial:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.http._
 import zio.metrics.connectors.{prometheus, MetricsConfig}

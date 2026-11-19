@@ -12,13 +12,13 @@ The connectors differ in two ways. The first is direction: a pull connector wait
 while a push connector sends the data to the backend. The second is what your application must provide: some connectors
 need an HTTP endpoint, others need a network address or an API key.
 
-| Connector   | Direction | How Data Leaves the App                       | Layers You Provide                                              |
-| ----------- | --------- | --------------------------------------------- | --------------------------------------------------------------- |
-| Prometheus  | Pull      | Your HTTP route returns the publisher text    | `publisherLayer`, `prometheusLayer`, `MetricsConfig`            |
-| StatsD      | Push      | UDP datagrams, or a Unix domain socket        | `statsdUDP` or `statsdUDS`, `StatsdConfig` or `DatagramSocketConfig`, `MetricsConfig` |
-| Datadog     | Push      | DogStatsD datagrams to a Datadog agent        | A StatsD client layer, `datadog.live`, `DatadogPublisherConfig`, `MetricsConfig` |
-| New Relic   | Push      | HTTPS requests to the New Relic Metric API    | `newRelicLayer`, `NewRelicConfig`, `MetricsConfig`              |
-| Micrometer  | In-process | Listener that updates a Micrometer registry  | `micrometerLayer`, a `MeterRegistry`, `MicrometerConfig`        |
+| Connector | Direction | How Data Leaves the App |
+| ----------- | --------- | --------------------------------------------- |
+| Prometheus | Pull | Your HTTP route returns the publisher text |
+| StatsD | Push | UDP datagrams, or a Unix domain socket |
+| Datadog | Push | DogStatsD datagrams to a Datadog agent |
+| New Relic | Push | HTTPS requests to the New Relic Metric API |
+| Micrometer | In-process | Listener that updates a Micrometer registry |
 
 Use the following steps to pick a connector:
 
@@ -30,9 +30,9 @@ Use the following steps to pick a connector:
 4. If your application already uses a Micrometer registry, use the Micrometer connector. Micrometer then forwards the
    metrics to whichever backend that registry supports.
 
-Each connector has its own page with the details: [Prometheus](../metrics/prometheus-client.md),
-[StatsD](../metrics/statsd-client.md), [Datadog](../metrics/datadog-client.md),
-[New Relic](../metrics/new-relic-client.md), and [Micrometer](../metrics/micrometer-connector.md).
+Each connector has its own page with the details: [Prometheus](../reference/prometheus-client.md),
+[StatsD](../reference/statsd-client.md), [Datadog](../reference/datadog-client.md),
+[New Relic](../reference/new-relic-client.md), and [Micrometer](../reference/micrometer-connector.md).
 
 Avoid providing two connectors that send to the same backend, because each metric is then reported twice. Read the
-[Datadog page](../metrics/datadog-client.md) before you combine the Datadog and StatsD layers.
+[Datadog page](../reference/datadog-client.md) before you combine the Datadog and StatsD layers.

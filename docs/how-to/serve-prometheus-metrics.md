@@ -14,7 +14,7 @@ path and port, and how to control how often the text is refreshed.
 content type to `text/plain; version=0.0.4` so that Prometheus reads the body as the text format. The following route serves
 the metrics at `/internal/prometheus`:
 
-```scala
+```scala mdoc:silent
 import java.nio.charset.StandardCharsets
 
 import zio._
@@ -41,7 +41,7 @@ with the route.
 The server port comes from `Server.Config`. The following layer makes the server listen on port 9090 instead of the
 default 8080:
 
-```scala
+```scala mdoc:silent
 import zio._
 import zio.http._
 
@@ -56,7 +56,7 @@ recent refresh, not a new snapshot. A shorter interval gives fresher values and 
 interval does less work but returns older values. A reasonable starting point is the same interval as your Prometheus
 scrape interval:
 
-```scala
+```scala mdoc:silent
 import zio._
 import zio.metrics.connectors.MetricsConfig
 
@@ -72,7 +72,7 @@ that arrives very early returns an empty body.
 The application provides the server, the metrics layers, and the publisher. The routes need the `PrometheusPublisher`
 in their environment, which `prometheus.publisherLayer` provides:
 
-```scala
+```scala mdoc:compile-only
 import zio._
 import zio.http._
 import zio.metrics.connectors.prometheus
