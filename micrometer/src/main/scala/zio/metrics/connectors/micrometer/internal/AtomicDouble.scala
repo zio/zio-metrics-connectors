@@ -5,11 +5,11 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Scala's `Double` implementation does not play nicely with Java's
- * `AtomicReference.compareAndSwap` as `compareAndSwap` uses Java's `==`
+ * `AtomicReference.compareAndSet` as `compareAndSet` uses Java's `==`
  * reference equality when it performs an equality check. This means that even
  * if two Scala `Double`s have the same value, they will still fail
- * `compareAndSwap` as they will most likely be two, distinct object
- * references. Thus, `compareAndSwap` will fail.
+ * `compareAndSet` as they will most likely be two, distinct object
+ * references. Thus, `compareAndSet` will fail.
  *
  * This `AtomicDouble` implementation is a workaround for this issue that is
  * backed by an `AtomicLong` instead of an `AtomicReference` in which the

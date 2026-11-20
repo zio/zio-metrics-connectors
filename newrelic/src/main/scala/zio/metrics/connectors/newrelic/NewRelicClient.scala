@@ -5,10 +5,12 @@ import zio.http._
 import zio.json.ast.Json
 import zio.stream._
 
+/** Posts New Relic metric JSON to the Metric API in batches. `newRelicLayer` creates one. */
 trait NewRelicClient {
   private[newrelic] def send(data: Chunk[Json]): UIO[Unit]
 }
 
+/** Creates `NewRelicClient`s. */
 object NewRelicClient {
 
   private[newrelic] def make: ZIO[NewRelicConfig & Client, Nothing, NewRelicClient] = for {

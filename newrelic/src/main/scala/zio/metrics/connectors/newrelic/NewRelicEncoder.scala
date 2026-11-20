@@ -24,12 +24,29 @@ import zio.metrics._
 import zio.metrics.MetricState._
 import zio.metrics.connectors._
 
+/** Companion object of `NewRelicEncoder`. */
 object NewRelicEncoder {
   private[newrelic] val frequencyTagName = "zio.frequency.name"
 }
 
+/**
+ * Encodes metric events as New Relic metric objects, in the JSON format of the New Relic Metric API.
+ *
+ * `startedAt` is the start of the window written as `interval.ms` on `count` and `summary` objects: `interval.ms` is the
+ * time from `startedAt` to the event. The layer sets it to the time the layer is built.
+ *
+ * @param startedAt
+ *  The start of the window written as `interval.ms`
+ */
 final case class NewRelicEncoder(startedAt: Instant) {
 
+  /**
+   * Encodes one event as New Relic metric objects.
+   *
+   * A counter is a `count` object whose value is the absolute change since the previous poll (for a new counter, its
+   * count). A gauge is a `gauge` object. A histogram and a summary are each one `summary` object, and each frequency
+   * bucket is one `count` object. An `Unchanged` event gives no objects, except a gauge, which is encoded again.
+   */
   def encode(event: MetricEvent): ZIO[Any, Throwable, Chunk[Json]] =
     event match {
       case MetricEvent.New(key, state, timestamp)                          => encodeMetric(key, None, state, timestamp)
