@@ -91,6 +91,7 @@ private[micrometer] class MicrometerMetricListener(
       .increment(value)
 }
 
+/** Creates the listener that `micrometerLayer` registers. */
 object MicrometerMetricListener {
   private[micrometer] def make: URIO[MeterRegistry with MicrometerConfig, MicrometerMetricListener] =
     for {
