@@ -18,10 +18,8 @@ ZIO Metrics Connectors provides integration between ZIO metrics and industry-lea
 Add the core library to your `build.sbt`. All modules are published for Scala 2.12, Scala 2.13 and Scala 3, and run on the JVM only:
 
 ```sbt
-libraryDependencies ++= Seq(
-  // Core library: connector settings and the shared metrics client (JVM)
-  "dev.zio" %% "zio-metrics-connectors" % "2.6.1"
-)
+// Core library: connector settings and the shared metrics client (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors" % "2.6.1"
 ```
 
 Then add the connector for your monitoring backend, as described in [Modules](#modules).
@@ -31,22 +29,20 @@ Then add the connector for your monitoring backend, as described in [Modules](#m
 Each connector is a separate module. Add only the ones that you use:
 
 ```sbt
-libraryDependencies ++= Seq(
-  // Prometheus: encodes metrics as Prometheus text for you to serve over HTTP (JVM)
-  "dev.zio" %% "zio-metrics-connectors-prometheus" % "2.6.1",
+// Prometheus: encodes metrics as Prometheus text for you to serve over HTTP (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors-prometheus" % "2.6.1"
 
-  // StatsD: sends datagrams over UDP or a Unix domain socket (JVM)
-  "dev.zio" %% "zio-metrics-connectors-statsd" % "2.6.1",
+// StatsD: sends datagrams over UDP or a Unix domain socket (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors-statsd" % "2.6.1"
 
-  // Datadog: sends DogStatsD datagrams through a StatsD client, also adds `zio-metrics-connectors-statsd` (JVM)
-  "dev.zio" %% "zio-metrics-connectors-datadog" % "2.6.1",
+// Datadog: sends DogStatsD datagrams through a StatsD client, also adds `zio-metrics-connectors-statsd` (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors-datadog" % "2.6.1"
 
-  // New Relic: sends metrics to the New Relic Metric API over HTTPS, also adds `zio-http` and `zio-json` (JVM)
-  "dev.zio" %% "zio-metrics-connectors-newrelic" % "2.6.1",
+// New Relic: sends metrics to the New Relic Metric API over HTTPS, also adds `zio-http` and `zio-json` (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors-newrelic" % "2.6.1"
 
-  // Micrometer: forwards every metric update to a Micrometer `MeterRegistry` (JVM)
-  "dev.zio" %% "zio-metrics-connectors-micrometer" % "2.6.1"
-)
+// Micrometer: forwards every metric update to a Micrometer `MeterRegistry` (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors-micrometer" % "2.6.1"
 ```
 
 Each module depends on the core library, so you do not need to list it separately. Learn more about each module in its
