@@ -15,10 +15,11 @@ The tutorial uses sbt and assumes you know how to write a basic `ZIOAppDefault`.
 We need the Prometheus connector to encode the metrics, and zio-http to serve them. Add both to your `build.sbt`:
 
 ```sbt
-libraryDependencies ++= Seq(
-  "dev.zio" %% "zio-metrics-connectors-prometheus" % "@VERSION@",
-  "dev.zio" %% "zio-http"                          % "3.4.0",
-)
+// Prometheus connector: encodes the metrics as Prometheus text (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors-prometheus" % "@VERSION@"
+
+// zio-http: serves the metrics over HTTP
+libraryDependencies += "dev.zio" %% "zio-http" % "3.4.0"
 ```
 
 The connector brings in the core ZIO Metrics library, so no other dependency is needed for metrics.

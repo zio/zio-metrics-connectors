@@ -20,10 +20,11 @@ The connector needs a Micrometer `MeterRegistry` and a `MicrometerConfig`. The `
 Add the connector and a registry for your backend to your `build.sbt`. This example uses the Prometheus registry from Micrometer, which lives in the `io.micrometer.prometheusmetrics` package in Micrometer 1.17.2:
 
 ```sbt
-libraryDependencies ++= Seq(
-  "dev.zio"      %% "zio-metrics-connectors-micrometer" % "@VERSION@",
-  "io.micrometer" % "micrometer-registry-prometheus"    % "1.17.2",
-)
+// ZIO Metrics connector for Micrometer (JVM)
+libraryDependencies += "dev.zio" %% "zio-metrics-connectors-micrometer" % "@VERSION@"
+
+// Micrometer's Prometheus registry, which holds the metrics for scraping
+libraryDependencies += "io.micrometer" % "micrometer-registry-prometheus" % "1.17.2"
 ```
 
 The following application records a counter and provides all the layers:
