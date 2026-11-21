@@ -25,7 +25,7 @@ import zio.metrics.MetricLabel
  * @param entityId
  *  An optional entity ID value used with an internal tag for tracking client entity
  */
-@deprecated("Use zio.metrics.connectors.DatadogPublisherConfig instead", "2.4.0")
+@deprecated("Use zio.metrics.connectors.datadog.DatadogPublisherConfig instead", "2.4.0")
 final case class DatadogConfig(
   host: String,
   port: Int,
