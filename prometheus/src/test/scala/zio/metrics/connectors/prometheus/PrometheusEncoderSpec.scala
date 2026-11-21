@@ -70,7 +70,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
     else tags.toList.map(l => s"""${l.key}="${l.value}"""").mkString("{", ",", "}")
   }
 
-    private val encodeEscapedLabels = test("Escape special characters in label values") {
+  private val encodeEscapedLabels = test("Escape special characters in label values") {
     val key = MetricKey
       .gauge("escaped_label")
       .tagged("service", "api\"server\\node\nnext")
@@ -88,7 +88,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
       ),
     )
   }
-  
+
   private val encodeCounter = test("Encode a Counter")(check(genCounter) { case (pair, state) =>
     for {
       timestamp <- Clock.instant

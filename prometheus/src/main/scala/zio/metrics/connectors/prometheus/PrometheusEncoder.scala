@@ -54,10 +54,10 @@ case object PrometheusEncoder {
           notFirstLoop = true
 
           val escapedValue = l.value
-           .replace("\\", "\\\\")
-           .replace("\n", "\\n")
-           .replace("\"", "\\\"")
-         sb.append(l.key).append("=\"").append(escapedValue).append("\"")
+            .replace("\\", "\\\\")
+            .replace("\n", "\\n")
+            .replace("\"", "\\\"")
+          sb.append(l.key).append("=\"").append(escapedValue).append("\"")
         }
         sb.append("}")
         sb.toString
