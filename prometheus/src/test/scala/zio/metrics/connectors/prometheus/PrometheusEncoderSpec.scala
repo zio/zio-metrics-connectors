@@ -84,7 +84,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
       text == Chunk(
         "# TYPE escaped_label gauge",
         "# HELP escaped_label",
-        s"escaped_label{service=\"api\\\"server\\\\node\\nnext\"} 1.0 ${timestamp.toEpochMilli}",
+        s"""escaped_label{service="api\\"server\\\\node\\nnext"} 1.0 ${timestamp.toEpochMilli}""",
       ),
     )
   }
