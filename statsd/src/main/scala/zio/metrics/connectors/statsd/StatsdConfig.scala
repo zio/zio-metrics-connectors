@@ -16,7 +16,7 @@ import zio.metrics.MetricLabel
  * @param constantTags
  *  Tags that are added to every metric that is sent
  * @param suffix
- *  An optional suffix that is appended to every datagram, after the tags
+ *  An optional suffix that is appended to each metric line, after the tags (or after the type when there are no tags)
  */
 final case class StatsdConfig(
   host: String,
@@ -36,7 +36,7 @@ final case class StatsdConfig(
  * @param constantTags
  *  Tags that are added to every metric that is sent
  * @param suffix
- *  An optional suffix that is appended to every datagram, after the tags
+ *  An optional suffix that is appended to each metric line, after the tags (or after the type when there are no tags)
  */
 final case class DatagramSocketConfig(
   path: String,
@@ -44,10 +44,13 @@ final case class DatagramSocketConfig(
   constantTags: List[MetricLabel] = Nil,
   suffix: Option[String] = None)
 
+/** Default settings for [[StatsdConfig]]. */
 object StatsdConfig {
 
+  /** The defaults: host `localhost`, port `8125`, and no prefix, tags or suffix. */
   val default: StatsdConfig =
     StatsdConfig("localhost", 8125)
 
+  /** Provides the value of `default`. */
   val defaultLayer: ULayer[StatsdConfig] = ZLayer.succeed(default)
 }

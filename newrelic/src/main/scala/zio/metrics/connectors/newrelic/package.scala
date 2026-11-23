@@ -6,6 +6,26 @@ import zio.metrics.connectors.internal.MetricsClient
 
 package object newrelic {
 
+  /**
+   * Starts New Relic publishing. It encodes each new or changed metric, queues the JSON, and posts it in batches over HTTP
+   * with the default zio-http `Client`. Requires a `MetricsConfig` and a `NewRelicConfig`.
+   *
+   * {{{
+   * import java.time.Duration
+   *
+   * import zio._
+   *
+   * import zio.metrics.connectors._
+   * import zio.metrics.connectors.newrelic._
+   *
+   * val newRelic: ZLayer[Any, Nothing, Unit] =
+   *   ZLayer.make[Unit](
+   *     ZLayer.succeed(MetricsConfig(Duration.ofSeconds(10))),
+   *     NewRelicConfig.fromEnvLayer,
+   *     newRelicLayer,
+   *   )
+   * }}}
+   */
   lazy val newRelicLayer: ZLayer[MetricsConfig & NewRelicConfig, Nothing, Unit] =
     ZLayer.makeSome[MetricsConfig & NewRelicConfig, Unit](
       make,

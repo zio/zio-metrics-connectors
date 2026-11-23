@@ -8,6 +8,11 @@ import scala.util.{Failure, Success, Try}
 
 import zio._
 
+/**
+ * Sends StatsD datagrams to an agent over UDP or a unix domain socket.
+ *
+ * The layers `statsdUDP` and `statsdUDS` in this package provide it.
+ */
 trait StatsdClient {
   private[connectors] def send(chunk: Chunk[Byte]): Long
 }

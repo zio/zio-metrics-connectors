@@ -5,6 +5,11 @@ import zio.metrics.connectors.internal.MetricsClient
 
 package object statsd {
 
+  /**
+   * Starts the loop that sends the metrics over UDP, without providing a `StatsdClient`.
+   *
+   * Deprecated: use `statsdUDP` or `statsdUDS`, which also provide the client.
+   */
   @deprecated("Use the statsdUDP or statsdUDS from the zio.metrics.connectors.statsd package instead", "2.4.0")
   def statsdLayer: ZLayer[StatsdConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped[StatsdConfig & MetricsConfig] {
@@ -16,7 +21,22 @@ package object statsd {
     }
 
   /**
-   * Creates a layer that provides a StatsdClient that sends metrics over UDP network protocol.
+   * Creates a layer that provides a `StatsdClient`, which sends datagrams over UDP to the agent in `StatsdConfig`, and
+   * starts the loop that sends the metrics. Requires a `StatsdConfig` and a `MetricsConfig`.
+   *
+   * {{{
+   * import zio._
+   *
+   * import zio.metrics.connectors._
+   * import zio.metrics.connectors.statsd._
+   *
+   * val statsd: ZLayer[Any, Nothing, StatsdClient] =
+   *   ZLayer.make[StatsdClient](
+   *     ZLayer.succeed(StatsdConfig("localhost", 8125, prefix = Some("myapp."))),
+   *     ZLayer.succeed(MetricsConfig(java.time.Duration.ofSeconds(10))),
+   *     statsdUDP,
+   *   )
+   * }}}
    */
   def statsdUDP: URLayer[StatsdConfig & MetricsConfig, StatsdClient] =
     ZLayer.scoped[StatsdConfig & MetricsConfig] {
@@ -28,7 +48,9 @@ package object statsd {
     }
 
   /**
-   * Creates a layer that provides a StatsdClient that sends metrics over unix domain socket (UDS).
+   * Creates a layer that provides a `StatsdClient`, which sends datagrams to the unix domain socket at the path in
+   * `DatagramSocketConfig`, and starts the loop that sends the metrics. Requires a `DatagramSocketConfig` and a
+   * `MetricsConfig`.
    */
   def statsdUDS: URLayer[DatagramSocketConfig & MetricsConfig, StatsdClient] =
     ZLayer.scoped[DatagramSocketConfig & MetricsConfig] {
