@@ -8,6 +8,12 @@ import zio.metrics.connectors.statsd.{StatsdClient, StatsdConfig}
 
 package object datadog {
 
+  /**
+   * Starts the Datadog pipeline with a `StatsdClient` for `config.host` and `config.port`, and the settings of
+   * `DatadogConfig`.
+   *
+   * Deprecated: use `live`, with a `StatsdClient` such as the one from `statsdUDP`.
+   */
   @deprecated("Use zio.metrics.connectors.datadog.live instead", "2.4.0")
   lazy val datadogLayer: ZLayer[DatadogConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped(
@@ -26,6 +32,33 @@ package object datadog {
       } yield (),
     )
 
+  /**
+   * Starts the Datadog pipeline. It queues histogram values for sending as distributions, and it runs the poll loop that
+   * sends the other kinds of metric. Requires a `StatsdClient`, a `DatadogPublisherConfig` and a `MetricsConfig`.
+   *
+   * {{{
+   * import java.time.Duration
+   *
+   * import zio._
+   *
+   * import zio.metrics.connectors._
+   * import zio.metrics.connectors.datadog._
+   * import zio.metrics.connectors.statsd._
+   *
+   * val metrics: MetricsConfig = MetricsConfig(Duration.ofSeconds(10))
+   * val publisher              = DatadogPublisherConfig(prefix = Some("myapp."))
+   * val statsdConfig           = StatsdConfig("localhost", 8125)
+   *
+   * val datadogPipeline: ZLayer[Any, Nothing, Unit] =
+   *   ZLayer.make[Unit](
+   *     ZLayer.succeed(metrics),
+   *     ZLayer.succeed(publisher),
+   *     ZLayer.succeed(statsdConfig),
+   *     statsdUDP,
+   *     live,
+   *   )
+   * }}}
+   */
   lazy val live: ZLayer[StatsdClient & DatadogPublisherConfig & MetricsConfig, Nothing, Unit] =
     ZLayer.scoped(
       for {

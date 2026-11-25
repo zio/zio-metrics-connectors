@@ -7,8 +7,30 @@ import zio.metrics.connectors.internal.MetricsClient
 
 package object prometheus {
 
+  /** Provides a new `PrometheusPublisher` with empty text. */
   def publisherLayer: ULayer[PrometheusPublisher] = ZLayer.fromZIO(PrometheusPublisher.make)
 
+  /**
+   * Starts the poll loop. On each poll it renders every metric in Prometheus text format and replaces the publisher's
+   * text with the result. A metric that fails to encode is left out of that poll's text. Requires a `MetricsConfig` and a
+   * `PrometheusPublisher`, and provides nothing.
+   *
+   * {{{
+   * import java.time.Duration
+   *
+   * import zio._
+   *
+   * import zio.metrics.connectors._
+   * import zio.metrics.connectors.prometheus._
+   *
+   * val prometheus: ZLayer[Any, Nothing, PrometheusPublisher] =
+   *   ZLayer.make[PrometheusPublisher](
+   *     ZLayer.succeed(MetricsConfig(Duration.ofSeconds(10))),
+   *     publisherLayer,
+   *     prometheusLayer,
+   *   )
+   * }}}
+   */
   def prometheusLayer: ZLayer[MetricsConfig & PrometheusPublisher, Nothing, Unit] =
     ZLayer.scoped {
       for {

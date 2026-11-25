@@ -6,24 +6,24 @@ import zio.{ULayer, ZLayer}
 import zio.metrics.MetricLabel
 
 /**
- * Datadog Specific configuration
+ * Datadog specific configuration. Deprecated: use [[DatadogPublisherConfig]] instead.
  *
  * @param host
  *  Agent host name
  * @param port
  *  Agent port
  * @param histogramSendInterval
- *  Override for when the distributions should be sent faster than the general metrics frequency.
- *  This is typically with an app that generates lots of distributions, but doesn't want to send other metrics
- *  types, such as gauges, too frequently
+ *  How often the queued distributions are sent, instead of `MetricsConfig.interval`. When not set, that interval is used.
  * @param maxBatchedMetrics
- *  The maximum number of metrics to batch before sending. This affects packet size
+ *  The maximum number of queued values taken in one batch. Each batch is grouped by metric key, and each group is sent as one message
  * @param maxQueueSize
- *  The maximum number of metrics stored in the queue. This affects memory usage
+ *  The capacity of the queue of histogram values. The queue is a fixed-size buffer, so this value bounds its memory use
  * @param containerId
- *  An optional docker container ID
+ *  An optional Docker container ID, written as a `|c:` suffix on each metric line
  * @param entityId
- *  An optional entity ID value used with an internal tag for tracking client entity
+ *  An optional entity ID, sent as the `dd.internal.entity_id` tag on every metric
+ * @param sendUnchanged
+ *  Whether metrics that did not change since the last poll are sent as well
  */
 @deprecated("Use zio.metrics.connectors.datadog.DatadogPublisherConfig instead", "2.4.0")
 final case class DatadogConfig(
@@ -36,8 +36,10 @@ final case class DatadogConfig(
   entityId: Option[String] = None,
   sendUnchanged: Boolean = false)
 
+/** Default settings and a layer for [[DatadogConfig]]. */
 object DatadogConfig {
 
+  /** The defaults: host `localhost`, port `8125`, batches of 10, a queue of 100000, and no optional settings. */
   val default: DatadogConfig =
     DatadogConfig(
       host = "localhost",
@@ -45,6 +47,7 @@ object DatadogConfig {
       histogramSendInterval = None,
     )
 
+  /** Provides the value of `default`. */
   val defaultLayer: ULayer[DatadogConfig] = ZLayer.succeed(default)
 
   private[connectors] def toPublisherConfig(config: DatadogConfig): DatadogPublisherConfig =
@@ -59,20 +62,18 @@ object DatadogConfig {
 }
 
 /**
- * Datadog Specific publisher configuration
+ * Settings for the Datadog publisher, used with `live`.
  *
  * @param histogramSendInterval
- *  Override for when the distributions should be sent faster than the general metrics frequency.
- *  This is typically with an app that generates lots of distributions, but doesn't want to send other metrics
- *  types, such as gauges, too frequently
+ *  How often the queued distributions are sent, instead of `MetricsConfig.interval`. When not set, that interval is used.
  * @param maxBatchedMetrics
- *  The maximum number of metrics to batch before sending. This affects packet size
+ *  The maximum number of queued values taken in one batch. Each batch is grouped by metric key, and each group is sent as one message
  * @param maxQueueSize
- *  The maximum number of metrics stored in the queue. This affects memory usage
+ *  The capacity of the queue of histogram values. The queue is a fixed-size buffer, so this value bounds its memory use
  * @param containerId
- *  An optional docker container ID
+ *  An optional Docker container ID, written as a `|c:` suffix on each metric line
  * @param entityId
- *  An optional entity ID value used with an internal tag for tracking client entity
+ *  An optional entity ID, sent as the `dd.internal.entity_id` tag on every metric
  * @param sendUnchanged
  *  Whether metrics that did not change since the last poll are sent as well
  * @param constantTags
