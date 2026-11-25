@@ -6,8 +6,18 @@ import zio._
 import zio.metrics._
 import zio.metrics.connectors._
 
+/** Encodes `MetricEvent`s in the Prometheus text exposition format. */
 case object PrometheusEncoder {
 
+  /**
+   * Encodes one event as lines of Prometheus text: a `# TYPE` line and a `# HELP` line, then the samples. Dots, dashes and
+   * spaces in the metric name become underscores. The result fails with the exception when encoding throws.
+   *
+   * A counter and a frequency are `counter`, a gauge is `gauge`, a histogram is `histogram` and a summary is `summary`.
+   * A histogram gives `_bucket` lines with an `le` label, and a summary gives lines with `quantile` and `error` labels.
+   * Both are followed by `_sum`, `_count`, `_min` and `_max` lines. A frequency gives one `counter` line per observed
+   * string, with a `bucket` label. No `_total` suffix is added to counter names.
+   */
   def encode(event: MetricEvent): Task[Chunk[String]] =
     ZIO.attempt(unsafeEncodeMetric(event.metricKey, event.current, event.timestamp))
 

@@ -6,6 +6,22 @@ import zio._
 import zio.metrics._
 import zio.metrics.connectors._
 
+/**
+ * Encodes metric events as StatsD text. Each metric value is one line, `name:value|type|#tags`, with the `prefix` in
+ * front of the name and the `suffix` at the end of the line.
+ *
+ * Counters are sent with type `c`. A new counter sends its count, an updated counter sends its change since the
+ * previous poll, and an unchanged counter sends `0`. Gauges are sent with type `g`. Histograms, summaries and frequencies
+ * are sent as gauges, with an extra tag for each bucket (`le`), quantile (`quantile` and `error`) or observed string
+ * (`bucket`).
+ *
+ * @param constantTags
+ *  Tags added to every line, before the metric's own tags
+ * @param suffix
+ *  An optional text added at the end of each line
+ * @param prefix
+ *  An optional text added in front of each metric name
+ */
 case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String], prefix: Option[String] = None) {
 
   private val BUF_PER_METRIC: Int   = 128
@@ -20,13 +36,23 @@ case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String]
         builder.toString
     }
 
+  /**
+   * Encodes `event` like `pureEncode`, but inside `ZIO.attempt`, so an exception becomes a failure.
+   *
+   * Deprecated: use `pureEncode`.
+   */
   @deprecated("Use pureEncode instead", "2.5.4")
   def encode(event: MetricEvent): Task[Chunk[Byte]] =
     ZIO.attempt(Chunk.fromArray(encodeEvent(event).toString.getBytes()))
 
+  /**
+   * Encodes `event` as the bytes of one datagram. A histogram gives one line per bucket, a summary one line per quantile
+   * that has a value, and a frequency one line per observed string, separated by newlines.
+   */
   def pureEncode(event: MetricEvent): Chunk[Byte] =
     Chunk.fromArray(encodeEvent(event).toString.getBytes())
 
+  /** Builds the StatsD text of `event`, with one line per value, before it is converted to bytes. */
   def encodeEvent(event: MetricEvent): java.lang.StringBuilder = {
     val builder = new java.lang.StringBuilder(BUF_PER_METRIC)
 
@@ -178,4 +204,5 @@ case class StatsdEncoder(constantTags: List[MetricLabel], suffix: Option[String]
 
 }
 
+/** The encoder with no constant tags, suffix or prefix. */
 object StatsdEncoder extends StatsdEncoder(Nil, None, None)

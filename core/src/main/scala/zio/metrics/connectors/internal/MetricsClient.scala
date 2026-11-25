@@ -7,8 +7,10 @@ import zio.internal.metrics.metricRegistry
 import zio.metrics._
 import zio.metrics.connectors._
 
+/** Reads the metrics registry on a schedule and passes each poll's events to a handler. */
 object MetricsClient {
 
+  /** Starts the poll loop in the enclosing scope. */
   def make(handler: Iterable[MetricEvent] => UIO[Unit]): ZIO[MetricsConfig & Scope, Nothing, Unit] =
     for {
       cfg   <- ZIO.service[MetricsConfig]

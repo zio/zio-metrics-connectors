@@ -8,8 +8,14 @@ import zio.metrics._
 import zio.metrics.connectors.MetricsConfig
 import zio.metrics.connectors.statsd.StatsdClient
 
+/** Sends the histogram values that `DataDogListener` queues, as Datadog distributions. */
 object DataDogEventProcessor {
 
+  /**
+   * Starts a daemon fiber that sends the queued histogram values. Each time it runs, it takes up to `maxBatchedMetrics`
+   * values from the queue at a time until the queue is empty. It groups each batch by metric key and sends one StatsD
+   * message per key. It runs every `histogramSendInterval`, or every `MetricsConfig.interval` when that is not set.
+   */
   def make(
     client: StatsdClient,
     queue: RingBuffer[(MetricKey[MetricKeyType.Histogram], Double)],
@@ -35,6 +41,10 @@ object DataDogEventProcessor {
                          .unit
     } yield ()
 
+  /**
+   * Deprecated: use the overload that takes `DatadogPublisherConfig`. Same as that overload, with the settings taken from
+   * a `DatadogConfig` in the environment.
+   */
   @deprecated("Use the overload that accepts DatadogPublisherConfig instead", "2.4.0")
   def make(
     client: StatsdClient,
