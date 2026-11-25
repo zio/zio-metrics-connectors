@@ -1,7 +1,7 @@
 package zio.metrics.connectors.prometheus
 
 import zio._
-import zio.metrics.{MetricKey, MetricLabel}
+import zio.metrics.{MetricKey, MetricLabel, MetricState}
 import zio.metrics.connectors._
 import zio.metrics.connectors.MetricEvent._
 import zio.test._
@@ -17,6 +17,7 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
         encodeFrequency,
         encodeSummary,
         encodeHistogram,
+        encodeEscapedLabels,
       ) @@ timed @@ timeoutWarning(60.seconds) @@ parallel @@ withLiveClock
 
   def testGroupMetricByType = suite("The groupMetricByType method should")(
@@ -67,6 +68,25 @@ object PrometheusEncoderSpec extends ZIOSpecDefault with Generators {
     val tags = key.tags ++ extra.map(x => MetricLabel(x._1, x._2)).toSet
     if (tags.isEmpty) ""
     else tags.toList.map(l => s"""${l.key}="${l.value}"""").mkString("{", ",", "}")
+  }
+
+  private val encodeEscapedLabels = test("Escape special characters in label values") {
+    val key = MetricKey
+      .gauge("escaped_label")
+      .tagged("service", "api\"server\\node\nnext")
+
+    val state = MetricState.Gauge(1.0)
+
+    for {
+      timestamp <- Clock.instant
+      text      <- PrometheusEncoder.encode(New(key, state, timestamp))
+    } yield assertTrue(
+      text == Chunk(
+        "# TYPE escaped_label gauge",
+        "# HELP escaped_label",
+        s"""escaped_label{service="api\\"server\\\\node\\nnext"} 1.0 ${timestamp.toEpochMilli}""",
+      ),
+    )
   }
 
   private val encodeCounter = test("Encode a Counter")(check(genCounter) { case (pair, state) =>
