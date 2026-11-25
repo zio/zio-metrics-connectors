@@ -25,7 +25,7 @@ import zio.metrics.MetricLabel
  * @param sendUnchanged
  *  Whether metrics that did not change since the last poll are sent as well
  */
-@deprecated("Use zio.metrics.connectors.DatadogPublisherConfig instead", "2.4.0")
+@deprecated("Use zio.metrics.connectors.datadog.DatadogPublisherConfig instead", "2.4.0")
 final case class DatadogConfig(
   host: String,
   port: Int,
